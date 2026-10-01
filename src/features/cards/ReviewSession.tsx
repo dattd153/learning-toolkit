@@ -3,6 +3,9 @@ import { useStore } from "../../state/AppStore";
 import { dueCards } from "../../state/selectors";
 import { DAY, INTERVALS, formatDate, shuffle } from "../../lib/utils";
 import { Icon } from "../../components/Icon";
+import { compareAnswer, type AnswerVerdict } from "../../lib/answer";
+
+const VERDICT: Record<AnswerVerdict, string> = { match: "Khớp", close: "Gần đúng", diff: "Khác đáp án", empty: "Bạn chưa trả lời" };
 
 /**
  * Leitner review. A forgotten card goes back to box 1 and to the end of the
@@ -14,7 +17,11 @@ export function ReviewSession({ active }: { active: boolean }) {
   const [qi, setQi] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [done, setDone] = useState(0);
+  const [typed, setTyped] = useState("");
+  const [verdict, setVerdict] = useState<AnswerVerdict | null>(null);
   const rememberRef = useRef<HTMLButtonElement>(null);
+  const forgotRef = useRef<HTMLButtonElement>(null);
+  const typeAnswer = data.prefs.typeAnswer;
 
   const inSession = qi < queue.length;
   const current = inSession ? data.cards.find((c) => c.id === queue[qi]) : undefined;
@@ -24,9 +31,17 @@ export function ReviewSession({ active }: { active: boolean }) {
     if (inSession && !current) setQueue((q) => q.filter((_, i) => i !== qi));
   }, [inSession, current, qi]);
 
+  // After flipping, pre-focus the likely grade: Quên when the typed answer was off.
   useEffect(() => {
-    if (flipped) rememberRef.current?.focus({ preventScroll: true });
-  }, [flipped]);
+    if (!flipped) return;
+    const ref = verdict === "diff" || verdict === "empty" ? forgotRef : rememberRef;
+    ref.current?.focus({ preventScroll: true });
+  }, [flipped, verdict]);
+
+  const flip = () => {
+    if (typeAnswer && current) setVerdict(compareAnswer(typed, current.back));
+    setFlipped(true);
+  };
 
   const start = () => {
     setQueue(shuffle(dueCards(data.cards).map((c) => c.id)));
@@ -50,6 +65,8 @@ export function ReviewSession({ active }: { active: boolean }) {
     setDone((n) => n + 1);
     setQi((i) => i + 1);
     setFlipped(false);
+    setTyped("");
+    setVerdict(null);
   };
 
   useEffect(() => {
@@ -58,7 +75,7 @@ export function ReviewSession({ active }: { active: boolean }) {
       if (/INPUT|TEXTAREA/.test((document.activeElement as HTMLElement | null)?.tagName ?? "")) return;
       if (e.code === "Space" && !flipped) {
         e.preventDefault();
-        setFlipped(true);
+        flip();
       } else if (flipped && e.key === "1") grade(false);
       else if (flipped && e.key === "2") grade(true);
     };
@@ -68,8 +85,33 @@ export function ReviewSession({ active }: { active: boolean }) {
 
   if (!inSession) {
     const due = dueCards(data.cards).length;
-    if (done > 0 && due === 0)
+    const toggle = (
+      <label className="switch">
+        <input
+          type="checkbox"
+          checked={typeAnswer}
+          onChange={(e) => {
+            const on = e.target.checked;
+            update((d) => ({ ...d, prefs: { ...d.prefs, typeAnswer: on } }));
+          }}
+        />
+        <span>
+          <b>Gõ đáp án trước khi lật</b>
+          <small>Viết ra câu trả lời giúp nhớ chắc hơn và tự chấm trung thực hơn.</small>
+        </span>
+      </label>
+    );
+
+    let status;
+    if (!data.cards.length)
       return (
+        <div className="empty">
+          <Icon name="layers" />
+          <span>Chưa có thẻ nào. Thêm vài thẻ ở bên dưới để bắt đầu ôn.</span>
+        </div>
+      );
+    else if (done > 0 && due === 0)
+      status = (
         <div className="done">
           <Icon name="check" />
           <b>Xong rồi!</b>
@@ -78,39 +120,38 @@ export function ReviewSession({ active }: { active: boolean }) {
           </p>
         </div>
       );
-    if (!data.cards.length)
-      return (
-        <div className="empty">
-          <Icon name="layers" />
-          <span>Chưa có thẻ nào. Thêm vài thẻ ở bên dưới để bắt đầu ôn.</span>
-        </div>
-      );
-    if (!due) {
-      const next = Math.min(...data.cards.map((c) => c.due || 0));
-      return (
+    else if (!due)
+      status = (
         <div className="done">
           <Icon name="check" />
           <b>Không có thẻ nào đến hạn</b>
           <p className="muted" style={{ margin: "4px 0 0" }}>
-            Lần ôn tiếp theo: {formatDate(next)}.
+            Lần ôn tiếp theo: {formatDate(Math.min(...data.cards.map((c) => c.due || 0)))}.
           </p>
         </div>
       );
-    }
-    return (
-      <div className="review-head">
-        <span className="big">{due}</span>
-        <div className="grow">
-          <h3 style={{ margin: 0 }}>thẻ đến hạn ôn</h3>
-          <span className="hint">
-            Phím tắt: <span className="kbd">Space</span> lật · <span className="kbd">1</span> Quên ·{" "}
-            <span className="kbd">2</span> Nhớ
-          </span>
+    else
+      status = (
+        <div className="review-head">
+          <span className="big">{due}</span>
+          <div className="grow">
+            <h3 style={{ margin: 0 }}>thẻ đến hạn ôn</h3>
+            <span className="hint">
+              Phím tắt: <span className="kbd">{typeAnswer ? "Enter" : "Space"}</span> {typeAnswer ? "kiểm tra" : "lật"} ·{" "}
+              <span className="kbd">1</span> Quên · <span className="kbd">2</span> Nhớ
+            </span>
+          </div>
+          <button type="button" className="btn accent" onClick={start}>
+            <Icon name="play" />Bắt đầu ôn
+          </button>
         </div>
-        <button type="button" className="btn accent" onClick={start}>
-          <Icon name="play" />Bắt đầu ôn
-        </button>
-      </div>
+      );
+
+    return (
+      <>
+        {status}
+        {toggle}
+      </>
     );
   }
 
@@ -128,11 +169,30 @@ export function ReviewSession({ active }: { active: boolean }) {
         </div>
         <div className="face">{current.front}</div>
         {flipped && <div className="back">{current.back}</div>}
+        {flipped && verdict && (
+          <div className={`verdict ${verdict}`}>
+            <span className="pill">{VERDICT[verdict]}</span>
+            {typed.trim() && <span>Bạn trả lời: {typed.trim()}</span>}
+          </div>
+        )}
       </div>
+      {typeAnswer && !flipped && (
+        <form
+          className="answer-row"
+          onSubmit={(e) => {
+            e.preventDefault();
+            flip();
+          }}
+        >
+          <label className="sr" htmlFor="typedAnswer">Câu trả lời của bạn</label>
+          <input id="typedAnswer" type="text" autoFocus autoComplete="off" placeholder="Gõ câu trả lời rồi nhấn Enter" value={typed} onChange={(e) => setTyped(e.target.value)} />
+          <button type="submit" className="btn">Kiểm tra</button>
+        </form>
+      )}
       <div className="review-actions">
         {flipped ? (
           <>
-            <button type="button" className="btn danger" onClick={() => grade(false)}>
+            <button ref={forgotRef} type="button" className="btn danger" onClick={() => grade(false)}>
               Quên <span className="kbd">1</span>
             </button>
             <button ref={rememberRef} type="button" className="btn success" onClick={() => grade(true)}>
@@ -140,8 +200,9 @@ export function ReviewSession({ active }: { active: boolean }) {
             </button>
           </>
         ) : (
-          <button type="button" className="btn full" onClick={() => setFlipped(true)}>
-            <Icon name="eye" />Lật thẻ
+          <button type="button" className={`btn full${typeAnswer ? " ghost" : ""}`} onClick={flip}>
+            <Icon name="eye" />
+            {typeAnswer ? "Không nhớ, lật thẻ" : "Lật thẻ"}
           </button>
         )}
         <button type="button" className="btn ghost small stop" onClick={() => setQueue([])}>

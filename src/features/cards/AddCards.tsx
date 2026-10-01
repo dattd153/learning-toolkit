@@ -1,14 +1,10 @@
-import { useRef, useState } from "react";
-import type { Card } from "../../types";
+import { useRef, useState, type ChangeEvent } from "react";
 import { useStore } from "../../state/AppStore";
 import { useToast } from "../../state/Toast";
 import { aiErrorMessage } from "../../lib/platform";
-import { uid } from "../../lib/utils";
+import { appendCards } from "../../state/cardActions";
+import { parseDelimited } from "../../lib/csv";
 import { Icon } from "../../components/Icon";
-
-const newCard = (front: string, back: string, topic: string): Card => ({
-  id: uid(), front, back, topic, box: 1, due: Date.now(), created: Date.now(),
-});
 
 const cardsPrompt = (notes: string) =>
   `Từ ghi chú học tập dưới đây, hãy soạn từ 5 đến 12 thẻ nhớ theo kiểu gợi nhớ chủ động: mặt trước là một câu hỏi ngắn, cụ thể; mặt sau là đáp án ngắn gọn. Mỗi thẻ chỉ kiểm tra một ý. Viết bằng ngôn ngữ của ghi chú.
@@ -20,8 +16,10 @@ Chỉ trả về JSON, không thêm gì khác: {"the":[{"truoc":"...","sau":"...
 
 type Proposal = { truoc: string; sau: string };
 
+const HEADER = /^(front|question|mặt trước|câu hỏi)/i;
+
 export function AddCards() {
-  const { update, sampler } = useStore();
+  const { data, update, sampler } = useStore();
   const toast = useToast();
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
@@ -32,16 +30,34 @@ export function AddCards() {
   const [picked, setPicked] = useState<Set<number>>(new Set());
   const [genStatus, setGenStatus] = useState("");
   const frontRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const addMany = (pairs: [string, string][]) => {
-    const t = topic.trim();
-    update((d) => ({ ...d, cards: [...d.cards, ...pairs.map(([f, b]) => newCard(f, b, t))] }));
+  /** Adds cards, skipping duplicates. Returns how many were added. */
+  const addMany = (pairs: [string, string, string?][]) => {
+    const items = pairs.map(([front, back, tp]) => ({ front, back, topic: tp || topic }));
+    const { added } = appendCards(data.cards, items);
+    if (added) update((d) => ({ ...d, cards: appendCards(d.cards, items).cards }));
+    return added;
+  };
+
+  const importFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const rows = parseDelimited(await file.text());
+    if (rows.length && HEADER.test(rows[0][0]?.trim() ?? "")) rows.shift();
+    const pairs = rows
+      .filter((r) => r[0]?.trim() && r[1]?.trim())
+      .map((r) => [r[0].trim(), r[1].trim(), r[2]?.trim()] as [string, string, string?]);
+    if (!pairs.length) return toast("Không đọc được thẻ nào. Cần ít nhất 2 cột: mặt trước, mặt sau.");
+    const n = addMany(pairs);
+    toast(n === pairs.length ? `Đã nhập ${n} thẻ.` : `Đã nhập ${n} thẻ, bỏ qua ${pairs.length - n} thẻ trùng.`);
   };
 
   const addOne = () => {
     const f = front.trim(), b = back.trim();
     if (!f || !b) return toast("Cần điền cả hai mặt thẻ.");
-    addMany([[f, b]]);
+    if (!addMany([[f, b]])) return toast("Thẻ này đã có trong bộ thẻ.");
     setFront("");
     setBack("");
     frontRef.current?.focus();
@@ -55,9 +71,9 @@ export function AddCards() {
       .filter((p) => p.length >= 2 && p[0].trim() && p.slice(1).join("|").trim())
       .map((p) => [p[0].trim(), p.slice(1).join("|").trim()] as [string, string]);
     if (!pairs.length) return toast("Không tìm thấy dòng nào có dấu |");
-    addMany(pairs);
+    const n = addMany(pairs);
     setBulk("");
-    toast(`Đã thêm ${pairs.length} thẻ.`);
+    toast(n === pairs.length ? `Đã thêm ${n} thẻ.` : `Đã thêm ${n} thẻ, bỏ qua ${pairs.length - n} thẻ trùng.`);
   };
 
   const generate = async () => {
@@ -78,10 +94,10 @@ export function AddCards() {
   const addPicked = () => {
     if (!proposals) return;
     const chosen = proposals.filter((_, i) => picked.has(i));
-    addMany(chosen.map((p) => [String(p.truoc), String(p.sau)]));
+    const n = addMany(chosen.map((p) => [String(p.truoc), String(p.sau)] as [string, string]));
     setProposals(null);
     setNotes("");
-    toast(`Đã thêm ${chosen.length} thẻ.`);
+    toast(`Đã thêm ${n} thẻ.`);
   };
 
   const togglePick = (i: number) =>
@@ -124,7 +140,14 @@ export function AddCards() {
         <textarea id="cBulk" rows={5} value={bulk} onChange={(e) => setBulk(e.target.value)} />
         <div className="row" style={{ marginTop: 10 }}>
           <button type="button" className="btn ghost" onClick={addBulk}>Nhập các thẻ</button>
+          <button type="button" className="btn ghost" onClick={() => fileRef.current?.click()}>
+            <Icon name="upload" />Nhập từ file CSV/TSV
+          </button>
+          <input ref={fileRef} type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden onChange={importFile} />
         </div>
+        <p className="hint" style={{ marginBottom: 0 }}>
+          File CSV/TSV: cột 1 mặt trước, cột 2 mặt sau, cột 3 chủ đề (không bắt buộc). Dùng được file xuất từ Anki (Notes in Plain Text).
+        </p>
       </details>
 
       {sampler && (

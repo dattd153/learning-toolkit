@@ -43,11 +43,25 @@ export interface Settings {
   long: number;
 }
 
+export interface Prefs {
+  /** Require typing an answer before a flashcard can be flipped. */
+  typeAnswer: boolean;
+}
+
 export interface AppData {
   cards: Card[];
   notes: Note[];
   palace: PalaceStop[];
   pomo: { date: string; count: number };
   settings: Settings;
+  prefs: Prefs;
   updatedAt: number;
+}
+
+/** File format written by "Sao lưu". */
+export interface BackupFile {
+  app: "hop-cong-cu-ghi-nho";
+  version: 1;
+  exportedAt: string;
+  data: AppData;
 }

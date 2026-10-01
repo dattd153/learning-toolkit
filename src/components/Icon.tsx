@@ -1,6 +1,6 @@
 export type IconName =
   | "book" | "bulb" | "layers" | "timer" | "pin" | "x" | "trash" | "up" | "down" | "chev"
-  | "check" | "spark" | "play" | "pause" | "reset" | "plus" | "eye" | "search" | "save" | "file" | "arrow";
+  | "check" | "spark" | "play" | "pause" | "reset" | "plus" | "eye" | "search" | "save" | "file" | "arrow" | "download" | "upload";
 
 export function Icon({ name, className = "" }: { name: IconName; className?: string }) {
   return (
@@ -32,6 +32,8 @@ const SPRITE = `
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></symbol>
   <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
 `;
 

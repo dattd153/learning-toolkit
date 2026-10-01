@@ -8,6 +8,7 @@ import { Icon } from "../../components/Icon";
 import { ConfirmButton } from "../../components/ConfirmButton";
 import { FeedbackBox } from "./FeedbackBox";
 import { studentPrompt } from "./prompt";
+import { GapsToCards } from "./GapsToCards";
 
 const STEPS = [
   ["Chọn khái niệm", "Ghi tên chủ đề lên đầu trang."],
@@ -126,6 +127,7 @@ export function FeynmanPanel() {
             Chỗ bí cần học lại <span className="hint">(mỗi dòng một ý)</span>
           </label>
           <textarea id="fGaps" rows={3} style={{ minHeight: 88 }} value={gaps} onChange={(e) => setGaps(e.target.value)} placeholder="Vì sao lãi được nhập vào gốc?" />
+          <GapsToCards gaps={gaps} concept={concept.trim()} />
           <div className="row" style={{ marginTop: 16 }}>
             <button type="button" className="btn" onClick={save}>
               <Icon name="save" />Lưu bài

@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useStore } from "../../state/AppStore";
 import { useToast } from "../../state/Toast";
 import { uid } from "../../lib/utils";
+import { appendCards } from "../../state/cardActions";
 import { Icon } from "../../components/Icon";
 import { ConfirmButton } from "../../components/ConfirmButton";
 
@@ -33,6 +34,19 @@ export function PalacePanel() {
       [palace[i], palace[j]] = [palace[j], palace[i]];
       return { ...d, palace };
     });
+
+  /** One card per stop: "Điểm dừng N (place) có gì?" → item + mental image. */
+  const toCards = () => {
+    const items = stops.map((s, i) => ({
+      front: `Điểm dừng ${i + 1} (${s.place}) có gì?`,
+      back: s.image ? `${s.item}\n${s.image}` : s.item,
+      topic: "Cung điện ký ức",
+    }));
+    const { added } = appendCards(data.cards, items);
+    if (!added) return toast("Mọi điểm dừng đều đã có thẻ.");
+    update((d) => ({ ...d, cards: appendCards(d.cards, items).cards }));
+    toast(added === items.length ? `Đã tạo ${added} thẻ từ lộ trình.` : `Đã tạo ${added} thẻ mới, bỏ qua ${items.length - added} thẻ đã có.`);
+  };
 
   const togglePractice = () => {
     setPractice((p) => !p);
@@ -123,6 +137,9 @@ export function PalacePanel() {
           </div>
           {stops.length > 0 && (
             <div className="row" style={{ marginTop: 10 }}>
+              <button type="button" className="btn ghost small" onClick={toCards}>
+                <Icon name="layers" />Tạo thẻ từ lộ trình
+              </button>
               <ConfirmButton className="btn danger small" armedLabel="Xoá hết?" onConfirm={() => update((d) => ({ ...d, palace: [] }))}>
                 <Icon name="trash" />Xoá lộ trình
               </ConfirmButton>

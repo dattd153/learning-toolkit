@@ -6,6 +6,7 @@ import { pomoToday } from "../../state/selectors";
 import { formatClock, todayKey } from "../../lib/utils";
 import { Icon } from "../../components/Icon";
 import { beep, unlockAudio } from "./beep";
+import { QuickRecall } from "./QuickRecall";
 
 type Mode = keyof Settings;
 const MODE_LABEL: Record<Mode, string> = { focus: "Tập trung", short: "Nghỉ ngắn", long: "Nghỉ dài" };
@@ -20,8 +21,12 @@ export function PomodoroPanel() {
   const [remaining, setRemaining] = useState(settings.focus * 60);
   const [endAt, setEndAt] = useState<number | null>(null);
   const [task, setTask] = useState("");
+  /** Set when a focus session ends: prompts a quick brain-dump recall. */
+  const [recallFor, setRecallFor] = useState<string | null>(null);
   const dataRef = useRef(data);
   dataRef.current = data;
+  const taskRef = useRef(task);
+  taskRef.current = task;
 
   const running = endAt !== null;
   const total = settings[mode] * 60;
@@ -43,7 +48,8 @@ export function PomodoroPanel() {
       if (mode === "focus") {
         const count = pomoToday(dataRef.current) + 1;
         update((d) => ({ ...d, pomo: { date: todayKey(), count } }));
-        toast("Hết phiên tập trung. Nghỉ chút nhé!");
+        toast("Hết phiên tập trung. Viết nhanh những gì bạn vừa học nhé!");
+        setRecallFor(taskRef.current.trim());
         switchMode(count % 4 === 0 ? "long" : "short");
       } else {
         toast("Hết giờ nghỉ. Sẵn sàng phiên tiếp theo.");
@@ -140,6 +146,7 @@ export function PomodoroPanel() {
           </div>
         </div>
       </div>
+      {recallFor !== null && <QuickRecall task={recallFor} onClose={() => setRecallFor(null)} />}
     </>
   );
 }

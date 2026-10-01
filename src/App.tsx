@@ -7,6 +7,7 @@ import { prefersReducedMotion } from "./lib/utils";
 import { IconSprite } from "./components/Icon";
 import { Header } from "./components/Header";
 import { Tabs } from "./components/Tabs";
+import { DataTools } from "./components/DataTools";
 import { MethodsPanel } from "./features/methods/MethodsPanel";
 import { FeynmanPanel } from "./features/feynman/FeynmanPanel";
 import { CardsPanel } from "./features/cards/CardsPanel";
@@ -14,7 +15,7 @@ import { PomodoroPanel } from "./features/pomodoro/PomodoroPanel";
 import { PalacePanel } from "./features/palace/PalacePanel";
 
 export default function App() {
-  const { data, syncStatus } = useStore();
+  const { data } = useStore();
   const [tab, setTab] = useHashTab();
   const mainRef = useRef<HTMLElement>(null);
 
@@ -53,8 +54,7 @@ export default function App() {
       </main>
       <footer>
         <div className="wrap">
-          <span className="dot" aria-hidden="true" />
-          <span>{syncStatus}</span>
+          <DataTools />
         </div>
       </footer>
     </>
