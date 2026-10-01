@@ -64,12 +64,17 @@ export function accuracy(days: AppData["days"], n = 30, now = Date.now()) {
   return { reviews, correct, rate: reviews ? correct / reviews : null };
 }
 
-/** Cards due on each of the next `n` days; overdue cards count toward today. */
-export function forecast(cards: Card[], n = 7, now = Date.now()) {
+/**
+ * Studied cards due on each of the next `n` days (overdue count toward today),
+ * plus `newToday` — today's allowance of new cards (they have no future due date).
+ */
+export function forecast(cards: Card[], n = 7, now = Date.now(), newToday = 0) {
   const today = startOfDay(now);
   const out = Array.from({ length: n }, (_, i) => ({ date: addDays(today, i), count: 0 }));
+  out[0].count = newToday;
   const end = addDays(today, n);
   for (const c of cards) {
+    if (c.srs.state === 0) continue;
     if (c.due >= end) continue;
     const idx = c.due < addDays(today, 1) ? 0 : out.findIndex((d, i) => c.due >= d.date && (i === n - 1 || c.due < out[i + 1].date));
     if (idx >= 0) out[idx].count++;

@@ -5,11 +5,13 @@ import { clozeAnswer, clozePlain } from "../../lib/cloze";
 import { formatDate } from "../../lib/utils";
 import { Icon } from "../../components/Icon";
 import { ConfirmButton } from "../../components/ConfirmButton";
+import { CardEditForm } from "./CardEditForm";
 
 export function CardList() {
   const { data, update } = useStore();
   const [query, setQuery] = useState("");
   const [deckId, setDeckId] = useState("all");
+  const [editing, setEditing] = useState<string | null>(null);
   const q = query.trim().toLowerCase();
   const deckName = new Map(data.decks.map((d) => [d.id, d.name]));
   const list = data.cards.filter(
@@ -47,6 +49,12 @@ export function CardList() {
         ) : (
           list.map((c) => {
             const cloze = c.kind === "cloze";
+            if (editing === c.id)
+              return (
+                <li key={c.id} className="editing">
+                  <CardEditForm card={c} onDone={() => setEditing(null)} />
+                </li>
+              );
             return (
               <li key={c.id}>
                 <span className="front-col">{cloze ? clozePlain(c.front, c.clozeIndex) : c.front}</span>
@@ -54,6 +62,9 @@ export function CardList() {
                 <span className="bx" title={`Bộ ${deckName.get(c.deckId) ?? ""} · ôn tiếp: ${formatDate(c.due)}`}>
                   {STATE_LABEL[c.srs.state]}
                 </span>
+                <button type="button" className="iconbtn" aria-label="Sửa thẻ" onClick={() => setEditing(c.id)}>
+                  <Icon name="edit" />
+                </button>
                 <ConfirmButton ariaLabel="Xoá thẻ" onConfirm={() => update((d) => ({ ...d, cards: d.cards.filter((x) => x.id !== c.id) }))}>
                   <Icon name="x" />
                 </ConfirmButton>

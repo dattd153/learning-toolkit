@@ -2,7 +2,7 @@ import type { AppData, Card, Deck } from "../types";
 import { uid } from "../lib/utils";
 import { newSrs } from "../lib/srs";
 import { clozeCount, hasCloze } from "../lib/cloze";
-import { DEFAULT_DECK_ID } from "../lib/storage";
+import { DEFAULT_DECK_ID, DEFAULT_NEW_PER_DAY } from "../lib/storage";
 
 export interface NewCard {
   front: string;
@@ -46,7 +46,7 @@ export function ensureDeck(decks: Deck[], name: string): { decks: Deck[]; id: st
   if (!n) return { decks, id: DEFAULT_DECK_ID };
   const found = decks.find((d) => d.name.toLowerCase() === n.toLowerCase());
   if (found) return { decks, id: found.id };
-  const deck = { id: uid(), name: n, created: Date.now() };
+  const deck: Deck = { id: uid(), name: n, created: Date.now(), newPerDay: DEFAULT_NEW_PER_DAY };
   return { decks: [...decks, deck], id: deck.id };
 }
 
@@ -61,4 +61,60 @@ export function addCardsToNamedDecks(d: AppData, items: (NewCard & { deckName?: 
   });
   const { cards, added } = appendCards(d.cards, resolved);
   return { data: added ? { ...d, decks, cards } : d, added };
+}
+
+export interface CardEdit {
+  front: string;
+  back: string;
+  deckId: string;
+}
+
+/**
+ * Edit a card's text/deck while keeping its review history (srs, due).
+ * Cloze cards made from the same sentence (same front + deck) are edited as a
+ * group: gaps that disappear drop their card, new gaps get a new card.
+ */
+export function editCard(cards: Card[], id: string, patch: CardEdit, now = Date.now()): { cards: Card[] } | { error: string } {
+  const card = cards.find((c) => c.id === id);
+  if (!card) return { error: "Không tìm thấy thẻ." };
+  const front = patch.front.trim(), back = patch.back.trim(), deckId = patch.deckId || DEFAULT_DECK_ID;
+
+  if (card.kind === "basic") {
+    if (!front || !back) return { error: "Cần điền cả hai mặt thẻ." };
+    return { cards: cards.map((c) => (c.id === id ? { ...c, front, back, deckId } : c)) };
+  }
+
+  if (!hasCloze(front)) return { error: "Thẻ điền chỗ trống cần ít nhất một chỗ {{...}}." };
+  const isSibling = (c: Card) => c.kind === "cloze" && c.front === card.front && c.deckId === card.deckId;
+  const n = clozeCount(front);
+  const have = new Set<number>();
+  const kept: Card[] = [];
+  for (const c of cards) {
+    if (!isSibling(c)) kept.push(c);
+    else if ((c.clozeIndex ?? 0) < n) {
+      have.add(c.clozeIndex ?? 0);
+      kept.push({ ...c, front, back, deckId });
+    } // else: that gap no longer exists → drop the card
+  }
+  for (let i = 0; i < n; i++)
+    if (!have.has(i))
+      kept.push({ id: uid(), deckId, front, back, topic: card.topic, kind: "cloze", clozeIndex: i, due: now, created: now, srs: newSrs() });
+  return { cards: kept };
+}
+
+/**
+ * "Học thêm N thẻ mới": raise today's allowance by `n` in total, spread over
+ * the chosen deck (or every deck that still has new cards waiting).
+ */
+export function grantBonusNew(d: AppData, deckId: string, n: number, waitingByDeck: Record<string, number>, today: string): AppData {
+  let left = n;
+  const decks = d.decks.map((deck) => {
+    if (left <= 0 || (deckId !== "all" && deck.id !== deckId)) return deck;
+    const give = Math.min(left, waitingByDeck[deck.id] ?? 0);
+    if (!give) return deck;
+    left -= give;
+    const prev = deck.bonusNew?.date === today ? deck.bonusNew.count : 0;
+    return { ...deck, bonusNew: { date: today, count: prev + give } };
+  });
+  return { ...d, decks };
 }

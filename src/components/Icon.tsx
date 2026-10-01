@@ -1,6 +1,6 @@
 export type IconName =
   | "book" | "bulb" | "layers" | "timer" | "pin" | "x" | "trash" | "up" | "down" | "chev"
-  | "check" | "spark" | "play" | "pause" | "reset" | "plus" | "eye" | "search" | "save" | "file" | "arrow" | "download" | "upload" | "chart" | "bell" | "cloud";
+  | "check" | "spark" | "play" | "pause" | "reset" | "plus" | "eye" | "search" | "save" | "file" | "arrow" | "download" | "upload" | "chart" | "bell" | "cloud" | "edit";
 
 export function Icon({ name, className = "" }: { name: IconName; className?: string }) {
   return (
@@ -37,6 +37,7 @@ const SPRITE = `
   <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-5"/><path d="M13 17V8"/><path d="M18 17v-9"/></symbol>
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
   <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/><path d="m15 5 4 4"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
 `;
 

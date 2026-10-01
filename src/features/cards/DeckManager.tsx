@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "../../state/AppStore";
 import { useToast } from "../../state/Toast";
 import { ensureDeck } from "../../state/cardActions";
+import { studyQueue } from "../../state/selectors";
 import { DEFAULT_DECK_ID } from "../../lib/storage";
 import { Icon } from "../../components/Icon";
 import { ConfirmButton } from "../../components/ConfirmButton";
@@ -46,7 +47,7 @@ export function DeckManager() {
       <ul className="decks">
         {data.decks.map((d) => {
           const cards = data.cards.filter((c) => c.deckId === d.id);
-          const due = cards.filter((c) => c.due <= now).length;
+          const q = studyQueue(data, d.id, now);
           return (
             <li key={d.id}>
               {editing === d.id ? (
@@ -64,8 +65,17 @@ export function DeckManager() {
               ) : (
                 <button type="button" className="deck-name" onClick={() => { setEditing(d.id); setDraft(d.name); }} aria-label={`Đổi tên bộ ${d.name}`}>
                   {d.name}
-                  <small>{cards.length} thẻ{due ? ` · ${due} đến hạn` : ""}</small>
+                  <small>
+                    {cards.length} thẻ{q.total ? ` · hôm nay ${q.review.length} ôn + ${q.fresh.length} mới` : ""}
+                  </small>
                 </button>
+              )}
+              {editing !== d.id && (
+                <NewPerDayInput
+                  deckName={d.name}
+                  value={d.newPerDay}
+                  onCommit={(v) => update((x) => ({ ...x, decks: x.decks.map((k) => (k.id === d.id ? { ...k, newPerDay: v } : k)) }))}
+                />
               )}
               {d.id !== DEFAULT_DECK_ID && editing !== d.id && (
                 <ConfirmButton ariaLabel={`Xoá bộ ${d.name}`} onConfirm={() => remove(d.id)}>
@@ -90,7 +100,38 @@ export function DeckManager() {
           <Icon name="plus" />Tạo
         </button>
       </form>
-      <p className="hint" style={{ marginBottom: 0 }}>Bấm vào tên để đổi tên. Xoá bộ thẻ thì thẻ bên trong chuyển về "Chung".</p>
+      <p className="hint" style={{ marginBottom: 0 }}>
+        Bấm vào tên để đổi tên. "Mới/ngày" là số thẻ mới tối đa được đưa vào mỗi ngày (thẻ ôn lại không bị giới hạn). Xoá
+        bộ thẻ thì thẻ bên trong chuyển về "Chung".
+      </p>
     </div>
+  );
+}
+
+/** Max new cards per day for one deck; commits on blur/Enter, clamped to 0–999. */
+function NewPerDayInput({ deckName, value, onCommit }: { deckName: string; value: number; onCommit: (v: number) => void }) {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => setDraft(String(value)), [value]);
+  const commit = () => {
+    const n = Math.min(999, Math.max(0, parseInt(draft, 10)));
+    if (Number.isNaN(n)) return setDraft(String(value));
+    setDraft(String(n));
+    if (n !== value) onCommit(n);
+  };
+  return (
+    <label className="deck-limit">
+      <input
+        type="number"
+        min={0}
+        max={999}
+        inputMode="numeric"
+        value={draft}
+        aria-label={`Số thẻ mới mỗi ngày của bộ ${deckName}`}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => e.key === "Enter" && commit()}
+      />
+      mới/ngày
+    </label>
   );
 }

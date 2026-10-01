@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import type { PalaceStop } from "../../types";
 import { useStore } from "../../state/AppStore";
 import { useToast } from "../../state/Toast";
 import { uid } from "../../lib/utils";
@@ -14,6 +15,7 @@ export function PalacePanel() {
   const [image, setImage] = useState("");
   const [practice, setPractice] = useState(false);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
+  const [editing, setEditing] = useState<string | null>(null);
   const placeRef = useRef<HTMLInputElement>(null);
   const stops = data.palace;
 
@@ -77,6 +79,20 @@ export function PalacePanel() {
               <ol className="route">
                 {stops.map((s, i) => {
                   const hidden = practice && !revealed.has(s.id);
+                  if (editing === s.id && !practice)
+                    return (
+                      <li key={s.id}>
+                        <span className="no" aria-hidden="true">{i + 1}</span>
+                        <StopEditForm
+                          stop={s}
+                          onCancel={() => setEditing(null)}
+                          onSave={(patch) => {
+                            update((d) => ({ ...d, palace: d.palace.map((x) => (x.id === s.id ? { ...x, ...patch } : x)) }));
+                            setEditing(null);
+                          }}
+                        />
+                      </li>
+                    );
                   return (
                     <li key={s.id}>
                       <span className="no" aria-hidden="true">{i + 1}</span>
@@ -96,6 +112,9 @@ export function PalacePanel() {
                       <div className="ctrls">
                         {!practice && (
                           <>
+                            <button type="button" className="iconbtn" aria-label="Sửa điểm dừng" onClick={() => setEditing(s.id)}>
+                              <Icon name="edit" />
+                            </button>
                             <button type="button" className="iconbtn" aria-label="Chuyển lên" disabled={i === 0} onClick={() => move(i, i - 1)}>
                               <Icon name="up" />
                             </button>
@@ -148,5 +167,38 @@ export function PalacePanel() {
         </div>
       </div>
     </>
+  );
+}
+
+/** Inline editor for one stop on the route. */
+function StopEditForm({ stop, onSave, onCancel }: { stop: PalaceStop; onSave: (p: Omit<PalaceStop, "id">) => void; onCancel: () => void }) {
+  const [place, setPlace] = useState(stop.place);
+  const [item, setItem] = useState(stop.item);
+  const [image, setImage] = useState(stop.image);
+  const [error, setError] = useState("");
+  const id = `stop-${stop.id}`;
+  return (
+    <form
+      className="edit-form"
+      style={{ gridColumn: "2 / -1" }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!place.trim() || !item.trim()) return setError("Cần có điểm dừng và thứ cần nhớ.");
+        onSave({ place: place.trim(), item: item.trim(), image: image.trim() });
+      }}
+      onKeyDown={(e) => e.key === "Escape" && onCancel()}
+    >
+      <label className="f" htmlFor={`${id}-place`}>Điểm dừng</label>
+      <input id={`${id}-place`} type="text" autoFocus value={place} onChange={(e) => setPlace(e.target.value)} />
+      <label className="f" htmlFor={`${id}-item`}>Thứ cần nhớ</label>
+      <input id={`${id}-item`} type="text" value={item} onChange={(e) => setItem(e.target.value)} />
+      <label className="f" htmlFor={`${id}-img`}>Hình ảnh liên tưởng</label>
+      <input id={`${id}-img`} type="text" value={image} onChange={(e) => setImage(e.target.value)} />
+      {error && <p className="err" role="alert">{error}</p>}
+      <div className="row">
+        <button type="submit" className="btn small">Lưu</button>
+        <button type="button" className="btn ghost small" onClick={onCancel}>Huỷ</button>
+      </div>
+    </form>
   );
 }
