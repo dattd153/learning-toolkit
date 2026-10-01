@@ -2,7 +2,7 @@ import type { AppData, BackupFile } from "../types";
 import { normalize } from "./storage";
 
 export function toBackup(data: AppData): BackupFile {
-  return { app: "hop-cong-cu-ghi-nho", version: 1, exportedAt: new Date().toISOString(), data };
+  return { app: "hop-cong-cu-ghi-nho", version: 2, exportedAt: new Date().toISOString(), data };
 }
 
 /**
@@ -29,11 +29,19 @@ export function mergeData(current: AppData, incoming: AppData): AppData {
     const ids = new Set(a.map((x) => x.id));
     return [...a, ...b.filter((x) => !ids.has(x.id))];
   };
+  // Per-day counters: keep the larger value so re-importing never double-counts.
+  const days = { ...current.days };
+  for (const [k, v] of Object.entries(incoming.days)) {
+    const c = days[k];
+    days[k] = c ? { reviews: Math.max(c.reviews, v.reviews), correct: Math.max(c.correct, v.correct), focus: Math.max(c.focus, v.focus) } : v;
+  }
   return {
     ...current,
     cards: add(current.cards, incoming.cards),
+    decks: add(current.decks, incoming.decks),
     notes: add(current.notes, incoming.notes),
     palace: add(current.palace, incoming.palace),
+    days,
   };
 }
 

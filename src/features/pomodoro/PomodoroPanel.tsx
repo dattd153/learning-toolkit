@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Settings } from "../../types";
 import { useStore } from "../../state/AppStore";
 import { useToast } from "../../state/Toast";
-import { pomoToday } from "../../state/selectors";
-import { formatClock, todayKey } from "../../lib/utils";
+import { bumpDay, pomoToday } from "../../state/selectors";
+import { formatClock } from "../../lib/utils";
 import { Icon } from "../../components/Icon";
 import { beep, unlockAudio } from "./beep";
 import { QuickRecall } from "./QuickRecall";
@@ -47,7 +47,7 @@ export function PomodoroPanel() {
       beep();
       if (mode === "focus") {
         const count = pomoToday(dataRef.current) + 1;
-        update((d) => ({ ...d, pomo: { date: todayKey(), count } }));
+        update((d) => ({ ...d, days: bumpDay(d.days, { focus: 1 }) }));
         toast("Hết phiên tập trung. Viết nhanh những gì bạn vừa học nhé!");
         setRecallFor(taskRef.current.trim());
         switchMode(count % 4 === 0 ? "long" : "short");

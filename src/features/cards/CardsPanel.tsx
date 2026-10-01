@@ -1,6 +1,6 @@
 import { ReviewSession } from "./ReviewSession";
 import { AddCards } from "./AddCards";
-import { BoxChart } from "./BoxChart";
+import { DeckManager } from "./DeckManager";
 import { CardList } from "./CardList";
 
 export function CardsPanel({ active }: { active: boolean }) {
@@ -9,8 +9,8 @@ export function CardsPanel({ active }: { active: boolean }) {
       <div className="panel-head">
         <h2>Thẻ nhớ ôn ngắt quãng</h2>
         <p className="lede">
-          Hệ thống hộp Leitner: nhớ được thì thẻ lên hộp cao hơn và lâu mới gặp lại (1, 3, 7, 14, 30 ngày); quên thì về
-          hộp 1. Tự nhớ lại trước khi lật thẻ là phần quan trọng nhất.
+          Lịch ôn dùng thuật toán FSRS: mỗi thẻ có độ khó và độ bền trí nhớ riêng, được hẹn ôn đúng lúc bạn sắp quên. Tự
+          nhớ lại trước khi lật thẻ là phần quan trọng nhất, rồi chấm trung thực: Quên, Khó, Nhớ hoặc Dễ.
         </p>
       </div>
       <div className="cols">
@@ -20,10 +20,7 @@ export function CardsPanel({ active }: { active: boolean }) {
           </div>
           <AddCards />
         </div>
-        <div className="card">
-          <h3>Phân bố thẻ theo hộp</h3>
-          <BoxChart />
-        </div>
+        <DeckManager />
       </div>
       <CardList />
     </>

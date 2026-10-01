@@ -1,43 +1,55 @@
 import { useRef, useState, type ChangeEvent } from "react";
+import type { CardProposal } from "../../../shared/prompts";
 import { useStore } from "../../state/AppStore";
 import { useToast } from "../../state/Toast";
+import { addCardsToNamedDecks, type NewCard } from "../../state/cardActions";
 import { aiErrorMessage } from "../../lib/platform";
-import { appendCards } from "../../state/cardActions";
 import { parseDelimited } from "../../lib/csv";
+import { clozeCount, hasCloze } from "../../lib/cloze";
+import { DEFAULT_DECK_ID } from "../../lib/storage";
 import { Icon } from "../../components/Icon";
-
-const cardsPrompt = (notes: string) =>
-  `Từ ghi chú học tập dưới đây, hãy soạn từ 5 đến 12 thẻ nhớ theo kiểu gợi nhớ chủ động: mặt trước là một câu hỏi ngắn, cụ thể; mặt sau là đáp án ngắn gọn. Mỗi thẻ chỉ kiểm tra một ý. Viết bằng ngôn ngữ của ghi chú.
-Ghi chú:
-"""
-${notes.slice(0, 8000)}
-"""
-Chỉ trả về JSON, không thêm gì khác: {"the":[{"truoc":"...","sau":"..."}]}`;
-
-type Proposal = { truoc: string; sau: string };
 
 const HEADER = /^(front|question|mặt trước|câu hỏi)/i;
 
 export function AddCards() {
-  const { data, update, sampler } = useStore();
+  const { data, update, ai } = useStore();
   const toast = useToast();
+  const [deckId, setDeckId] = useState(DEFAULT_DECK_ID);
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
-  const [topic, setTopic] = useState("");
   const [bulk, setBulk] = useState("");
   const [notes, setNotes] = useState("");
-  const [proposals, setProposals] = useState<Proposal[] | null>(null);
+  const [proposals, setProposals] = useState<CardProposal[] | null>(null);
   const [picked, setPicked] = useState<Set<number>>(new Set());
+  const [generating, setGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState("");
   const frontRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  /** Adds cards, skipping duplicates. Returns how many were added. */
-  const addMany = (pairs: [string, string, string?][]) => {
-    const items = pairs.map(([front, back, tp]) => ({ front, back, topic: tp || topic }));
-    const { added } = appendCards(data.cards, items);
-    if (added) update((d) => ({ ...d, cards: appendCards(d.cards, items).cards }));
+  // Fall back to "Chung" if the selected deck was deleted.
+  const targetDeck = data.decks.some((d) => d.id === deckId) ? deckId : DEFAULT_DECK_ID;
+  const isCloze = hasCloze(front);
+
+  /** Adds cards (into the selected deck unless a deck name is given), skipping duplicates. */
+  const addMany = (items: (NewCard & { deckName?: string })[]) => {
+    const withDeck = items.map((it) => (it.deckName ? it : { ...it, deckId: targetDeck }));
+    const { added } = addCardsToNamedDecks(data, withDeck);
+    if (added) update((d) => addCardsToNamedDecks(d, withDeck).data);
     return added;
+  };
+
+  const report = (added: number, total: number, verb = "thêm") =>
+    toast(added === total ? `Đã ${verb} ${added} thẻ.` : `Đã ${verb} ${added} thẻ, bỏ qua ${total - added} thẻ trùng.`);
+
+  const addOne = () => {
+    const f = front.trim(), b = back.trim();
+    if (!f || (!isCloze && !b)) return toast(isCloze ? "Cần có mặt trước." : "Cần điền cả hai mặt thẻ.");
+    const n = addMany([{ front: f, back: b }]);
+    if (!n) return toast("Thẻ này đã có trong bộ thẻ.");
+    setFront("");
+    setBack("");
+    frontRef.current?.focus();
+    toast(isCloze ? `Đã tạo ${n} thẻ điền chỗ trống.` : "Đã thêm thẻ.");
   };
 
   const importFile = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -46,55 +58,49 @@ export function AddCards() {
     if (!file) return;
     const rows = parseDelimited(await file.text());
     if (rows.length && HEADER.test(rows[0][0]?.trim() ?? "")) rows.shift();
-    const pairs = rows
-      .filter((r) => r[0]?.trim() && r[1]?.trim())
-      .map((r) => [r[0].trim(), r[1].trim(), r[2]?.trim()] as [string, string, string?]);
-    if (!pairs.length) return toast("Không đọc được thẻ nào. Cần ít nhất 2 cột: mặt trước, mặt sau.");
-    const n = addMany(pairs);
-    toast(n === pairs.length ? `Đã nhập ${n} thẻ.` : `Đã nhập ${n} thẻ, bỏ qua ${pairs.length - n} thẻ trùng.`);
-  };
-
-  const addOne = () => {
-    const f = front.trim(), b = back.trim();
-    if (!f || !b) return toast("Cần điền cả hai mặt thẻ.");
-    if (!addMany([[f, b]])) return toast("Thẻ này đã có trong bộ thẻ.");
-    setFront("");
-    setBack("");
-    frontRef.current?.focus();
-    toast("Đã thêm thẻ.");
+    const items = rows
+      .filter((r) => r[0]?.trim() && (r[1]?.trim() || hasCloze(r[0])))
+      .map((r) => ({ front: r[0].trim(), back: (r[1] ?? "").trim(), deckName: r[2]?.trim() || undefined }));
+    if (!items.length) return toast("Không đọc được thẻ nào. Cần ít nhất 2 cột: mặt trước, mặt sau.");
+    report(addMany(items), expectedCount(items), "nhập");
   };
 
   const addBulk = () => {
-    const pairs = bulk
+    const items = bulk
       .split("\n")
-      .map((l) => l.split("|"))
-      .filter((p) => p.length >= 2 && p[0].trim() && p.slice(1).join("|").trim())
-      .map((p) => [p[0].trim(), p.slice(1).join("|").trim()] as [string, string]);
-    if (!pairs.length) return toast("Không tìm thấy dòng nào có dấu |");
-    const n = addMany(pairs);
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => {
+        const [f, ...rest] = l.split("|");
+        return { front: f.trim(), back: rest.join("|").trim() };
+      })
+      .filter((it) => it.front && (it.back || hasCloze(it.front)));
+    if (!items.length) return toast("Không tìm thấy dòng nào có dấu | hoặc {{...}}");
+    const n = addMany(items);
     setBulk("");
-    toast(n === pairs.length ? `Đã thêm ${n} thẻ.` : `Đã thêm ${n} thẻ, bỏ qua ${pairs.length - n} thẻ trùng.`);
+    report(n, expectedCount(items));
   };
 
   const generate = async () => {
-    if (!sampler || !notes.trim()) return toast("Hãy dán ghi chú trước.");
+    if (!ai || !notes.trim()) return toast("Hãy dán ghi chú trước.");
     setProposals(null);
+    setGenerating(true);
     setGenStatus("Đang soạn thẻ...");
     try {
-      const r = (await sampler.json(cardsPrompt(notes.trim()))) as { the?: Proposal[] } | null;
-      const list = (Array.isArray(r?.the) ? r!.the : []).filter((x) => x && x.truoc && x.sau);
+      const list = await ai.cards(notes.trim());
       setProposals(list);
       setPicked(new Set(list.map((_, i) => i)));
       setGenStatus(list.length ? "" : "Không soạn được thẻ nào từ đoạn này.");
     } catch (e) {
       setGenStatus(aiErrorMessage(e));
+    } finally {
+      setGenerating(false);
     }
   };
 
   const addPicked = () => {
     if (!proposals) return;
-    const chosen = proposals.filter((_, i) => picked.has(i));
-    const n = addMany(chosen.map((p) => [String(p.truoc), String(p.sau)] as [string, string]));
+    const n = addMany(proposals.filter((_, i) => picked.has(i)).map((p) => ({ front: p.truoc, back: p.sau })));
     setProposals(null);
     setNotes("");
     toast(`Đã thêm ${n} thẻ.`);
@@ -117,14 +123,27 @@ export function AddCards() {
           <textarea ref={frontRef} id="cFront" rows={2} style={{ minHeight: 72 }} value={front} onChange={(e) => setFront(e.target.value)} />
         </div>
         <div className="grow">
-          <label className="f" htmlFor="cBack">Mặt sau (đáp án)</label>
+          <label className="f" htmlFor="cBack">
+            Mặt sau {isCloze ? <span className="hint">(ghi chú thêm, không bắt buộc)</span> : "(đáp án)"}
+          </label>
           <textarea id="cBack" rows={2} style={{ minHeight: 72 }} value={back} onChange={(e) => setBack(e.target.value)} />
         </div>
       </div>
+      <p className="hint" style={{ margin: "6px 0 0" }}>
+        {isCloze ? (
+          <>Thẻ điền chỗ trống: sẽ tạo {clozeCount(front)} thẻ, mỗi thẻ ẩn một chỗ <b>{"{{...}}"}</b>.</>
+        ) : (
+          <>Mẹo: viết <b>{"{{...}}"}</b> ở mặt trước để tạo thẻ điền chỗ trống, ví dụ <i>Thủ đô của Úc là {"{{Canberra}}"}</i>.</>
+        )}
+      </p>
       <div className="row" style={{ marginTop: 10 }}>
         <div className="grow">
-          <label className="sr" htmlFor="cTopic">Chủ đề</label>
-          <input type="text" id="cTopic" placeholder="Chủ đề (không bắt buộc)" value={topic} onChange={(e) => setTopic(e.target.value)} />
+          <label className="sr" htmlFor="cDeck">Bộ thẻ</label>
+          <select id="cDeck" value={targetDeck} onChange={(e) => setDeckId(e.target.value)}>
+            {data.decks.map((d) => (
+              <option key={d.id} value={d.id}>Bộ thẻ: {d.name}</option>
+            ))}
+          </select>
         </div>
         <button type="button" className="btn" onClick={addOne}>
           <Icon name="plus" />Thêm thẻ
@@ -134,7 +153,8 @@ export function AddCards() {
       <details className="more">
         <summary><Icon name="chev" className="chev" />Thêm nhiều thẻ một lúc</summary>
         <p className="hint" style={{ marginTop: 0 }}>
-          Mỗi dòng một thẻ, ngăn cách mặt trước và mặt sau bằng dấu <b>|</b>. Ví dụ: <i>Thủ đô Úc | Canberra</i>
+          Mỗi dòng một thẻ, ngăn cách mặt trước và mặt sau bằng dấu <b>|</b> (ví dụ: <i>Thủ đô Úc | Canberra</i>), hoặc một
+          câu có <b>{"{{...}}"}</b>.
         </p>
         <label className="sr" htmlFor="cBulk">Danh sách thẻ</label>
         <textarea id="cBulk" rows={5} value={bulk} onChange={(e) => setBulk(e.target.value)} />
@@ -146,11 +166,12 @@ export function AddCards() {
           <input ref={fileRef} type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden onChange={importFile} />
         </div>
         <p className="hint" style={{ marginBottom: 0 }}>
-          File CSV/TSV: cột 1 mặt trước, cột 2 mặt sau, cột 3 chủ đề (không bắt buộc). Dùng được file xuất từ Anki (Notes in Plain Text).
+          File CSV/TSV: cột 1 mặt trước, cột 2 mặt sau, cột 3 tên bộ thẻ (không bắt buộc, tự tạo nếu chưa có). Dùng được
+          file xuất từ Anki (Notes in Plain Text).
         </p>
       </details>
 
-      {sampler && (
+      {ai && (
         <details className="more">
           <summary><Icon name="chev" className="chev" />Tạo thẻ từ ghi chú bằng Claude</summary>
           <p className="hint" style={{ marginTop: 0 }}>
@@ -159,7 +180,7 @@ export function AddCards() {
           <label className="sr" htmlFor="cNotes">Ghi chú</label>
           <textarea id="cNotes" rows={6} value={notes} onChange={(e) => setNotes(e.target.value)} />
           <div className="row" style={{ marginTop: 10 }}>
-            <button type="button" className="btn ghost" onClick={generate} disabled={genStatus === "Đang soạn thẻ..."}>
+            <button type="button" className="btn ghost" onClick={generate} disabled={generating}>
               <Icon name="spark" />Đề xuất thẻ
             </button>
           </div>
@@ -185,3 +206,6 @@ export function AddCards() {
     </div>
   );
 }
+
+/** Cards a list of items would create (cloze text expands to one card per {{...}}). */
+const expectedCount = (items: NewCard[]) => items.reduce((n, it) => n + (hasCloze(it.front) ? clozeCount(it.front) : 1), 0);

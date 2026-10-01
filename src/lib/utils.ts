@@ -1,10 +1,29 @@
 export const DAY = 86_400_000;
-/** Days until the next review, indexed by Leitner box (index 0 unused). */
-export const INTERVALS = [0, 1, 3, 7, 14, 30];
+export const MINUTE = 60_000;
 
 export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-export const todayKey = () => new Date().toISOString().slice(0, 10);
+/** Local calendar day "YYYY-MM-DD" (not UTC: a 6am review in UTC+7 belongs to today). */
+export function dayKey(ms = Date.now()) {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export const todayKey = () => dayKey();
+
+/** Local midnight of the day containing `ms`. */
+export function startOfDay(ms = Date.now()) {
+  const d = new Date(ms);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+/** Add whole calendar days (DST-safe). */
+export function addDays(ms: number, n: number) {
+  const d = new Date(ms);
+  d.setDate(d.getDate() + n);
+  return d.getTime();
+}
 
 export const formatDate = (ms: number) => new Date(ms).toLocaleDateString("vi-VN");
 

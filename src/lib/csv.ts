@@ -1,11 +1,15 @@
 /**
- * Minimal RFC 4180 parser. Delimiter is auto-detected (tab if the first line
- * has one, else comma, else semicolon) so Anki "plain text" exports work.
+ * Minimal RFC 4180 parser. Delimiter comes from an Anki "#separator:" header
+ * if present, else is guessed from the first data line (tab, comma, semicolon).
  */
 export function parseDelimited(text: string): string[][] {
-  const src = text.replace(/^﻿/, "");
-  const firstLine = src.split(/\r?\n/, 1)[0] ?? "";
-  const delim = firstLine.includes("\t") ? "\t" : firstLine.includes(",") ? "," : firstLine.includes(";") ? ";" : ",";
+  const src = text.replace(/^\uFEFF/, "");
+  const lines = src.split(/\r?\n/);
+  // Anki plain-text exports declare "#separator:tab|comma|semicolon|pipe" in a header comment.
+  const declared = lines.find((l) => /^#separator:/i.test(l))?.split(":")[1]?.trim().toLowerCase() ?? "";
+  const sample = lines.find((l) => l.trim() && !l.startsWith("#")) ?? "";
+  const named: Record<string, string> = { tab: "\t", comma: ",", semicolon: ";", pipe: "|" };
+  const delim = named[declared] ?? (sample.includes("\t") ? "\t" : sample.includes(",") ? "," : sample.includes(";") ? ";" : ",");
   const rows: string[][] = [];
   let row: string[] = [];
   let cell = "";
@@ -41,4 +45,4 @@ export function parseDelimited(text: string): string[][] {
 
 const escapeCell = (v: string) => (/[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
-export const toCsv = (rows: string[][]) => "﻿" + rows.map((r) => r.map(escapeCell).join(",")).join("\r\n");
+export const toCsv = (rows: string[][]) => "\uFEFF" + rows.map((r) => r.map(escapeCell).join(",")).join("\r\n");

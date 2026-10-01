@@ -48,7 +48,7 @@ export function DataTools() {
   };
 
   return (
-    <div className="data-tools">
+    <section className="data-tools tool-block" aria-label="Dữ liệu của bạn">
       <div className="sync">
         <span className="dot" aria-hidden="true" />
         <span>{syncStatus}</span>
@@ -95,6 +95,6 @@ export function DataTools() {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

@@ -7,7 +7,6 @@ import { formatDate, prefersReducedMotion, uid } from "../../lib/utils";
 import { Icon } from "../../components/Icon";
 import { ConfirmButton } from "../../components/ConfirmButton";
 import { FeedbackBox } from "./FeedbackBox";
-import { studentPrompt } from "./prompt";
 import { GapsToCards } from "./GapsToCards";
 
 const STEPS = [
@@ -29,7 +28,7 @@ function measure(text: string, gaps: string) {
 }
 
 export function FeynmanPanel() {
-  const { data, update, sampler } = useStore();
+  const { data, update, ai } = useStore();
   const toast = useToast();
   const [noteId, setNoteId] = useState<string | null>(null);
   const [concept, setConcept] = useState("");
@@ -67,12 +66,12 @@ export function FeynmanPanel() {
 
   const ask = async () => {
     const c = concept.trim(), t = text.trim();
-    if (!sampler) return;
+    if (!ai) return;
     if (!c || !t) return toast("Cần có khái niệm và lời giải thích.");
     setAsking(true);
     setFeedback("Đang đọc bài của bạn...");
     try {
-      const f = (await sampler.json(studentPrompt(c, t))) as Feedback;
+      const f = await ai.feynman(c, t);
       setFeedback(f);
       if (noteId) update((d) => ({ ...d, notes: d.notes.map((n) => (n.id === noteId ? { ...n, feedback: f } : n)) }));
     } catch (e) {
@@ -132,7 +131,7 @@ export function FeynmanPanel() {
             <button type="button" className="btn" onClick={save}>
               <Icon name="save" />Lưu bài
             </button>
-            {sampler && (
+            {ai && (
               <button type="button" className="btn ghost" onClick={ask} disabled={asking}>
                 <Icon name="spark" />Nhờ Claude đóng vai học sinh
               </button>

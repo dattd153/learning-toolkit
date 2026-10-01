@@ -1,0 +1,21 @@
+{
+  "name": "Hộp công cụ ghi nhớ",
+  "short_name": "Ghi nhớ",
+  "description": "Phương pháp học có cơ sở khoa học: thẻ nhớ ôn ngắt quãng, Feynman, Pomodoro, cung điện ký ức.",
+  "lang": "vi",
+  "start_url": "/#cards",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F0FDFA",
+  "theme_color": "#0F766E",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Ôn thẻ", "url": "/#cards" },
+    { "name": "Pomodoro", "url": "/#pomo" }
+  ]
+}

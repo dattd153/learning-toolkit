@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { TabId } from "../types";
 
-const IDS: TabId[] = ["methods", "feynman", "cards", "pomo", "palace"];
+const IDS: TabId[] = ["methods", "feynman", "cards", "pomo", "palace", "stats"];
 const isTab = (v: string | null): v is TabId => !!v && (IDS as string[]).includes(v);
 
 function initialTab(): TabId {

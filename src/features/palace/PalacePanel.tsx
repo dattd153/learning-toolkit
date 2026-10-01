@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useStore } from "../../state/AppStore";
 import { useToast } from "../../state/Toast";
 import { uid } from "../../lib/utils";
-import { appendCards } from "../../state/cardActions";
+import { addCardsToNamedDecks } from "../../state/cardActions";
 import { Icon } from "../../components/Icon";
 import { ConfirmButton } from "../../components/ConfirmButton";
 
@@ -40,11 +40,11 @@ export function PalacePanel() {
     const items = stops.map((s, i) => ({
       front: `Điểm dừng ${i + 1} (${s.place}) có gì?`,
       back: s.image ? `${s.item}\n${s.image}` : s.item,
-      topic: "Cung điện ký ức",
+      deckName: "Cung điện ký ức",
     }));
-    const { added } = appendCards(data.cards, items);
+    const { added } = addCardsToNamedDecks(data, items);
     if (!added) return toast("Mọi điểm dừng đều đã có thẻ.");
-    update((d) => ({ ...d, cards: appendCards(d.cards, items).cards }));
+    update((d) => addCardsToNamedDecks(d, items).data);
     toast(added === items.length ? `Đã tạo ${added} thẻ từ lộ trình.` : `Đã tạo ${added} thẻ mới, bỏ qua ${items.length - added} thẻ đã có.`);
   };
 

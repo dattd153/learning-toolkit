@@ -4,6 +4,9 @@ import App from "./App";
 import { AppStoreProvider } from "./state/AppStore";
 import { ToastProvider } from "./state/Toast";
 import "./styles/global.css";
+import { registerServiceWorker } from "./lib/pwa";
+
+registerServiceWorker();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
