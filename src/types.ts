@@ -31,6 +31,8 @@ export interface Card {
   /** Epoch ms when the card is next due. */
   due: number;
   created: number;
+  /** Epoch ms of the first review (counts toward the deck's new-cards-per-day limit). */
+  introduced?: number;
   srs: Srs;
 }
 
@@ -38,6 +40,10 @@ export interface Deck {
   id: string;
   name: string;
   created: number;
+  /** Max new cards introduced per day (default 20). */
+  newPerDay: number;
+  /** Extra new cards allowed today only ("Học thêm 10 thẻ mới"). */
+  bonusNew?: { date: string; count: number };
 }
 
 export interface DayStats {

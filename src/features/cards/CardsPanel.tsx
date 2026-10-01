@@ -3,7 +3,7 @@ import { AddCards } from "./AddCards";
 import { DeckManager } from "./DeckManager";
 import { CardList } from "./CardList";
 
-export function CardsPanel({ active }: { active: boolean }) {
+export function CardsPanel() {
   return (
     <>
       <div className="panel-head">
@@ -16,7 +16,7 @@ export function CardsPanel({ active }: { active: boolean }) {
       <div className="cols">
         <div className="stack">
           <div className="card">
-            <ReviewSession active={active} />
+            <ReviewSession />
           </div>
           <AddCards />
         </div>

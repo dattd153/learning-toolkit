@@ -7,7 +7,8 @@ import { clozeCount, hasCloze } from "./cloze";
 const STORAGE_KEY = "mtk-state";
 
 export const DEFAULT_DECK_ID = "chung";
-export const defaultDeck = (): Deck => ({ id: DEFAULT_DECK_ID, name: "Chung", created: 0 });
+export const DEFAULT_NEW_PER_DAY = 20;
+export const defaultDeck = (): Deck => ({ id: DEFAULT_DECK_ID, name: "Chung", created: 0, newPerDay: DEFAULT_NEW_PER_DAY });
 
 export const blankData = (): AppData => ({
   version: 2,
@@ -60,6 +61,7 @@ function cleanCard(v: unknown, deckIds: Set<string>, deckByName: Map<string, str
   if (!deckIds.has(deckId)) deckId = deckByName.get(topic.trim().toLowerCase()) ?? DEFAULT_DECK_ID;
 
   const card: Card = { id: str(v.id) || uid(), deckId, front, back, topic, kind, due, created: num(v.created, now), srs };
+  if (typeof v.introduced === "number" && Number.isFinite(v.introduced)) card.introduced = v.introduced;
   if (kind === "cloze") card.clozeIndex = clampInt(v.clozeIndex, 0, Math.max(0, clozeCount(front) - 1), 0);
   return card;
 }
@@ -79,6 +81,13 @@ function cleanStop(v: unknown): PalaceStop | null {
 const cleanList = <T,>(v: unknown, fn: (x: unknown) => T | null): T[] =>
   Array.isArray(v) ? v.map(fn).filter((x): x is T => x !== null) : [];
 
+function deckSettings(v: Loose): Pick<Deck, "newPerDay" | "bonusNew"> {
+  const out: Pick<Deck, "newPerDay" | "bonusNew"> = { newPerDay: clampInt(v.newPerDay, 0, 9999, DEFAULT_NEW_PER_DAY) };
+  if (isObj(v.bonusNew) && /^\d{4}-\d{2}-\d{2}$/.test(str(v.bonusNew.date)))
+    out.bonusNew = { date: str(v.bonusNew.date), count: clampInt(v.bonusNew.count, 0, 9999, 0) };
+  return out;
+}
+
 function cleanDecks(raw: Loose): Deck[] {
   const decks: Deck[] = [defaultDeck()];
   const seen = new Set([DEFAULT_DECK_ID]);
@@ -86,12 +95,13 @@ function cleanDecks(raw: Loose): Deck[] {
     for (const v of raw.decks) {
       if (!isObj(v) || !str(v.name).trim()) continue;
       const id = str(v.id) || uid();
+      const extra = deckSettings(v);
       if (seen.has(id)) {
-        if (id === DEFAULT_DECK_ID) decks[0].name = str(v.name).trim();
+        if (id === DEFAULT_DECK_ID) decks[0] = { ...decks[0], name: str(v.name).trim(), ...extra };
         continue;
       }
       seen.add(id);
-      decks.push({ id, name: str(v.name).trim(), created: num(v.created, 0) });
+      decks.push({ id, name: str(v.name).trim(), created: num(v.created, 0), ...extra });
     }
   } else if (Array.isArray(raw.cards)) {
     // v1 → v2: every distinct topic becomes a deck.
@@ -100,7 +110,7 @@ function cleanDecks(raw: Loose): Deck[] {
       const t = isObj(c) ? str(c.topic).trim() : "";
       if (t && !names.has(t.toLowerCase())) names.set(t.toLowerCase(), t);
     }
-    for (const name of names.values()) decks.push({ id: uid(), name, created: Date.now() });
+    for (const name of names.values()) decks.push({ id: uid(), name, created: Date.now(), newPerDay: DEFAULT_NEW_PER_DAY });
   }
   return decks;
 }

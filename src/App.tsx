@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import type { TabId } from "./types";
 import { useStore } from "./state/AppStore";
 import { useHashTab } from "./state/useHashTab";
-import { dueCards } from "./state/selectors";
+import { studyQueue } from "./state/selectors";
 import { prefersReducedMotion } from "./lib/utils";
 import { IconSprite } from "./components/Icon";
 import { Header } from "./components/Header";
@@ -22,15 +22,15 @@ export default function App() {
   const { data } = useStore();
   const [tab, setTab] = useHashTab();
   const mainRef = useRef<HTMLElement>(null);
-  const due = dueCards(data.cards).length;
+  const due = studyQueue(data).total;
 
   // App-icon badge + daily reminder check (every minute while open).
   useEffect(() => {
     setBadge(due);
     void maybeRemind(data.prefs.reminder, due);
-    const t = setInterval(() => void maybeRemind(data.prefs.reminder, dueCards(data.cards).length), 60_000);
+    const t = setInterval(() => void maybeRemind(data.prefs.reminder, studyQueue(data).total), 60_000);
     return () => clearInterval(t);
-  }, [due, data.prefs.reminder, data.cards]);
+  }, [due, data]);
 
   // Switch tab and, if the user has scrolled past the panels, bring them back into view.
   const go = useCallback(
@@ -61,7 +61,7 @@ export default function App() {
       <main className="wrap" ref={mainRef}>
         {panel("methods", <MethodsPanel onGo={go} />)}
         {panel("feynman", <FeynmanPanel />)}
-        {panel("cards", <CardsPanel active={tab === "cards"} />)}
+        {panel("cards", <CardsPanel />)}
         {panel("pomo", <PomodoroPanel />)}
         {panel("palace", <PalacePanel />)}
         {panel("stats", <StatsPanel />)}

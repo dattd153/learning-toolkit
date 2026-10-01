@@ -1,12 +1,12 @@
 import type { TabId } from "../types";
 import { useStore } from "../state/AppStore";
-import { dueCards, pomoToday } from "../state/selectors";
+import { pomoToday, studyQueue } from "../state/selectors";
 import { streaks } from "../lib/stats";
 import { Icon } from "./Icon";
 
 export function Header({ onGo }: { onGo: (tab: TabId) => void }) {
   const { data } = useStore();
-  const due = dueCards(data.cards).length;
+  const due = studyQueue(data).total;
   const streak = streaks(data.days);
 
   const tiles: { go: TabId; value: number; label: string; hot?: boolean }[] = [

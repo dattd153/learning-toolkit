@@ -51,7 +51,9 @@ describe("accuracy & forecast", () => {
   it("buckets due cards by day with overdue in today", () => {
     const c = (due: number, state: 0 | 2 = 2): Card => ({ id: String(due), deckId: "chung", front: "q", back: "a", topic: "", kind: "basic", due, created: 0, srs: { ...newSrs(), state, stability: 1, difficulty: 5 } });
     const cards = [c(addDays(NOW, -3)), c(NOW), c(addDays(NOW, 1)), c(addDays(NOW, 6)), c(addDays(NOW, 7)), c(NOW, 0)];
-    expect(forecast(cards, 7, NOW).map((d) => d.count)).toEqual([3, 1, 0, 0, 0, 0, 1]);
+    // The new card (state 0) is excluded; today's new-card allowance is passed in separately.
+    expect(forecast(cards, 7, NOW).map((d) => d.count)).toEqual([2, 1, 0, 0, 0, 0, 1]);
+    expect(forecast(cards, 7, NOW, 5)[0].count).toBe(7);
     expect(stateCounts(cards)).toEqual({ 0: 1, 1: 0, 2: 5, 3: 0 });
   });
 });

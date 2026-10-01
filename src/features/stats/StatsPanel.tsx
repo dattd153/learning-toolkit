@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type MouseEvent, type FocusEvent } from "react";
 import { useStore } from "../../state/AppStore";
+import { studyQueue } from "../../state/selectors";
 import { STATE_LABEL } from "../../lib/srs";
 import { accuracy, forecast, heatmap, level, stateCounts, streaks, type HeatCell } from "../../lib/stats";
 import { formatDate } from "../../lib/utils";
@@ -35,7 +36,7 @@ export function StatsPanel() {
   const s = streaks(data.days, now);
   const acc = accuracy(data.days, 30, now);
   const states = stateCounts(data.cards);
-  const fc = useMemo(() => forecast(data.cards, 7, now), [data.cards, now]);
+  const fc = useMemo(() => forecast(data.cards, 7, now, studyQueue(data, "all", now).fresh.length), [data, now]);
   const heat = useMemo(() => heatmap(data.days, WEEKS, now), [data.days, now]);
   const heatMax = Math.max(1, ...heat.flat().map((c) => c.value));
   const fcMax = Math.max(1, ...fc.map((d) => d.count));
