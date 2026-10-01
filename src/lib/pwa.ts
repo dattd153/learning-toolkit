@@ -23,10 +23,46 @@ export function setBadge(count: number) {
 
 export const notificationsSupported = () => typeof window !== "undefined" && "Notification" in window;
 
+/** Why notifications can't work here (null = they can, permission aside). */
+export type NotifyBlocker = "unsupported" | "insecure" | "embedded" | "denied" | null;
+
+export function notificationBlocker(): NotifyBlocker {
+  if (!notificationsSupported()) return "unsupported";
+  // Browsers auto-deny over plain http (except localhost), e.g. http://192.168.x.x from a phone.
+  if (!window.isSecureContext) return "insecure";
+  if (Notification.permission === "denied") {
+    // Embedded views (VS Code Simple Browser, iframes) deny without ever asking.
+    try {
+      if (window.self !== window.top) return "embedded";
+    } catch {
+      return "embedded";
+    }
+    return "denied";
+  }
+  return null;
+}
+
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   if (!notificationsSupported()) return "denied";
   if (Notification.permission !== "default") return Notification.permission;
   return Notification.requestPermission();
+}
+
+/**
+ * Show a notification via the service worker when there is one (required on
+ * Android, where `new Notification()` throws), else the page-level API.
+ * Throws if the browser refuses.
+ */
+export async function showNotification(body: string, url = "/#cards") {
+  const opts = { body, tag: "daily-review", icon: "/icons/icon-192.png" };
+  const reg = await navigator.serviceWorker?.getRegistration?.().catch(() => undefined);
+  if (reg) return reg.showNotification("Hộp công cụ ghi nhớ", { ...opts, data: { url } });
+  const n = new Notification("Hộp công cụ ghi nhớ", opts);
+  n.onclick = () => {
+    window.focus();
+    location.hash = url.split("#")[1] ?? "";
+    n.close();
+  };
 }
 
 const REMINDED = "mtk-reminded";
@@ -54,12 +90,10 @@ export async function maybeRemind(reminder: string, due: number) {
   }
   if (!reminderDue(reminder, due, new Date(), last)) return;
   try {
+    await showNotification(`Hôm nay có ${due} thẻ cần ôn. Chỉ vài phút là xong!`);
+    // Mark only after it actually showed, so a failure is retried next minute.
     localStorage.setItem(REMINDED, dayKey());
   } catch {
-    /* ignore */
+    /* retried on the next check */
   }
-  const body = `Hôm nay có ${due} thẻ cần ôn. Chỉ vài phút là xong!`;
-  const reg = await navigator.serviceWorker?.getRegistration?.().catch(() => undefined);
-  if (reg) await reg.showNotification("Hộp công cụ ghi nhớ", { body, tag: "daily-review", icon: "/icons/icon-192.png", data: { url: "/#cards" } });
-  else new Notification("Hộp công cụ ghi nhớ", { body, tag: "daily-review", icon: "/icons/icon-192.png" });
 }
