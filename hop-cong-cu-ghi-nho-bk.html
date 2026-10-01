@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hộp công cụ ghi nhớ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F7FB; --grid:#E3DDF3; --grid-strong:#D3C9EE; --margin:#F0A7B4;
+  --ink:#3F2490; --ink-soft:#EDE7FB; --text:#1E1A2D; --muted:#5E5873;
+  --line:#CFC6E6; --hl:#FFE36E; --red:#C93838; --green:#23825A; --surface:#FFFFFF;
+  --hand:'Patrick Hand','Segoe Print','Bradley Hand',cursive;
+  --sans:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#16132A; --grid:#221E3B; --grid-strong:#2C2650; --margin:#6B2E44;
+    --ink:#B9A4FF; --ink-soft:#2A2350; --text:#ECE8F7; --muted:#ABA4C4;
+    --line:#3B3466; --hl:#6B5A12; --red:#FF8A8A; --green:#6FD6A6; --surface:#1D1935;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#16132A; --grid:#221E3B; --grid-strong:#2C2650; --margin:#6B2E44;
+  --ink:#B9A4FF; --ink-soft:#2A2350; --text:#ECE8F7; --muted:#ABA4C4;
+  --line:#3B3466; --hl:#6B5A12; --red:#FF8A8A; --green:#6FD6A6; --surface:#1D1935;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  margin:0;color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--grid-strong) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-strong) 1px,transparent 1px),
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px,32px 32px,8px 8px,8px 8px;
+}
+img{max-width:100%}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+
+/* Hero */
+header.hero{padding:48px 0 24px}
+.hero-inner{border-left:2px solid var(--margin);padding-left:24px}
+.hero h1{font-family:var(--hand);font-weight:400;color:var(--ink);font-size:clamp(2.6rem,7vw,4.2rem);line-height:1.05;margin:0 0 12px}
+.hero p{margin:0;max-width:60ch;color:var(--muted)}
+.today{margin-top:16px;font-family:var(--hand);font-size:1.35rem;color:var(--text)}
+.today mark{background:linear-gradient(transparent 55%,var(--hl) 55%);color:inherit;padding:0 2px}
+
+/* Tabs */
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:2px solid var(--ink)}
+.tabs .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.tabs .wrap::-webkit-scrollbar{display:none}
+.tab{flex:none;border:0;background:none;padding:12px 14px 10px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:4px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.tab .badge{display:inline-block;min-width:1.4em;padding:0 6px;margin-left:6px;border-radius:999px;background:var(--ink);color:var(--paper);font-size:.75rem;line-height:1.5em;text-align:center}
+
+main{padding:28px 0 48px}
+section.panel{display:none}
+section.panel.active{display:block}
+h2{font-family:var(--hand);font-weight:400;font-size:2.1rem;color:var(--ink);margin:0 0 4px;line-height:1.2}
+h3{font-size:1.05rem;margin:0 0 8px}
+.lede{color:var(--muted);margin:0 0 20px;max-width:65ch}
+
+.sheet{background:var(--surface);border:1.5px solid var(--line);border-radius:6px;padding:20px}
+.sheet + .sheet{margin-top:16px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.grow{flex:1 1 220px}
+label.f{display:block;font-weight:600;font-size:.9rem;margin-bottom:4px}
+input[type=text],input[type=number],textarea,select{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:4px;background:var(--surface)}
+textarea{resize:vertical;min-height:120px;line-height:1.6}
+input:focus,textarea:focus{border-color:var(--ink);outline:none;box-shadow:0 0 0 3px var(--ink-soft)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:4px;font-weight:600;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.small{padding:5px 10px;font-size:.85rem}
+.btn.warn{border-color:var(--red);color:var(--red);background:transparent}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.muted{color:var(--muted)}
+.hint{font-size:.88rem;color:var(--muted)}
+.ai-only{display:none!important}
+body.has-ai .ai-only{display:revert!important}
+body.has-ai .ai-only.btn{display:inline-flex!important}
+
+/* Methods */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.chip{border:1.5px solid var(--ink);background:transparent;color:var(--ink);border-radius:999px;padding:5px 14px;cursor:pointer;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.methods{display:grid;gap:0;border-top:1.5px solid var(--line)}
+details.m{border-bottom:1.5px solid var(--line);background:var(--surface)}
+details.m summary{list-style:none;cursor:pointer;padding:16px 18px;display:grid;grid-template-columns:1fr auto;gap:4px 16px;align-items:baseline}
+details.m summary::-webkit-details-marker{display:none}
+.m-name{font-weight:700;font-size:1.08rem}
+.m-name small{font-weight:400;color:var(--muted);margin-left:6px;font-size:.85rem}
+.m-what{grid-column:1/2;color:var(--muted);font-size:.95rem}
+.ev{grid-row:1/3;grid-column:2;font-size:.8rem;padding:2px 10px;border-radius:999px;border:1.5px solid currentColor;white-space:nowrap;align-self:center}
+.ev.manh{color:var(--green)} .ev.tb{color:var(--ink)} .ev.han{color:var(--muted)}
+details.m[open] summary{background:var(--ink-soft)}
+.m-body{padding:4px 18px 18px;max-width:72ch}
+.m-body ol{padding-left:1.3em;margin:8px 0}
+.m-body li{margin-bottom:4px}
+.m-tip{border-left:3px solid var(--hl);padding:6px 12px;margin:12px 0;background:var(--paper)}
+.tags{font-size:.82rem;color:var(--muted);margin-top:8px}
+
+/* Feynman */
+.steps4{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px}
+.step{border:1.5px dashed var(--line);border-radius:6px;padding:10px 12px;font-size:.9rem;background:var(--surface)}
+.step b{display:block;font-family:var(--hand);font-weight:400;font-size:1.25rem;color:var(--ink)}
+.meter{display:flex;gap:16px;flex-wrap:wrap;font-size:.88rem;color:var(--muted);margin:8px 0 12px}
+.meter b{color:var(--text)}
+.fb{margin-top:16px;border:1.5px solid var(--ink);border-radius:6px;padding:16px;background:var(--ink-soft)}
+.fb h4{margin:12px 0 4px;font-size:.95rem}
+.fb ul{margin:0;padding-left:1.2em}
+.score{font-family:var(--hand);font-size:1.8rem;color:var(--ink)}
+.notelist{list-style:none;padding:0;margin:0}
+.notelist li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.notelist button.link{background:none;border:0;padding:0;color:var(--ink);font-weight:600;cursor:pointer;text-align:left}
+
+/* Flashcards */
+.boxes{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0 4px}
+.boxcol{text-align:center;font-size:.8rem;color:var(--muted)}
+.boxbar{height:70px;display:flex;align-items:flex-end;justify-content:center;border-bottom:2px solid var(--line)}
+.boxbar span{display:block;width:60%;background:var(--ink);border-radius:3px 3px 0 0;min-height:2px;transition:height .3s}
+.boxcol b{display:block;color:var(--text);font-size:.95rem}
+.flash{min-height:220px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:28px 20px;border:1.5px solid var(--ink);border-radius:8px;background:var(--surface);
+  background-image:linear-gradient(transparent 31px,var(--grid) 32px);background-size:100% 32px}
+.flash .face{font-family:var(--hand);font-size:clamp(1.5rem,4vw,2.1rem);line-height:1.3;max-width:30ch;white-space:pre-wrap;overflow-wrap:anywhere}
+.flash .back{margin-top:18px;padding-top:14px;border-top:2px dashed var(--margin);font-size:1.05rem;white-space:pre-wrap;max-width:50ch;overflow-wrap:anywhere}
+.flash .meta{font-size:.8rem;color:var(--muted);margin-bottom:10px}
+.review-actions{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.btn.forgot{background:transparent;border-color:var(--red);color:var(--red)}
+.btn.remember{background:var(--green);border-color:var(--green);color:#fff}
+.cardlist{list-style:none;padding:0;margin:12px 0 0;max-height:420px;overflow:auto}
+.cardlist li{display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:.92rem}
+.cardlist .bx{font-size:.75rem;border:1.5px solid var(--ink);color:var(--ink);border-radius:999px;padding:0 8px;white-space:nowrap}
+.iconbtn{background:none;border:0;color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:4px}
+.iconbtn:hover{color:var(--red)}
+@media (max-width:560px){.cardlist li{grid-template-columns:1fr auto auto}.cardlist .back-col{grid-column:1/2;color:var(--muted)}}
+
+/* Pomodoro */
+.pomo{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:24px;align-items:center}
+@media (max-width:640px){.pomo{grid-template-columns:1fr}}
+.ring{position:relative;width:100%;max-width:280px;aspect-ratio:1;margin:0 auto}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .time{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .time b{font-family:var(--hand);font-weight:400;font-size:3.6rem;line-height:1;color:var(--text)}
+.ring .time span{font-size:.9rem;color:var(--muted)}
+.modes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tomatoes{font-size:1.4rem;letter-spacing:4px;min-height:1.6em}
+.settings{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+
+/* Palace */
+.route{list-style:none;padding:0;margin:16px 0 0;counter-reset:st}
+.route li{display:grid;grid-template-columns:40px 1fr auto;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:start}
+.route li::before{counter-increment:st;content:counter(st);font-family:var(--hand);font-size:1.6rem;color:var(--ink);line-height:1;text-align:center;padding-top:2px}
+.route .place{font-weight:700}
+.route .item{display:inline-block;margin-top:2px}
+.route .img{font-size:.9rem;color:var(--muted);font-style:italic}
+.practice .route .item.hidden{background:var(--ink-soft);color:var(--ink);border-radius:3px;cursor:pointer;padding:0 8px;font-size:.88rem}
+.empty{padding:24px;text-align:center;color:var(--muted);border:1.5px dashed var(--line);border-radius:6px;background:var(--surface)}
+
+footer{padding:20px 0 40px;font-size:.85rem;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--text);color:var(--paper);padding:10px 18px;border-radius:6px;font-size:.92rem;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;max-width:90vw}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap"><div class="hero-inner">
+    <h1>Hộp công cụ ghi nhớ</h1>
+    <p>Những phương pháp học có cơ sở khoa học, gom lại một chỗ, kèm công cụ để dùng ngay: giải thích kiểu Feynman, thẻ nhớ ôn ngắt quãng, đồng hồ Pomodoro và cung điện ký ức.</p>
+    <div class="today" id="today"></div>
+  </div></div>
+</header>
+
+<nav class="tabs" aria-label="Công cụ">
+  <div class="wrap" role="tablist">
+    <button class="tab" role="tab" data-tab="methods" aria-selected="true">Phương pháp</button>
+    <button class="tab" role="tab" data-tab="feynman" aria-selected="false">Bàn Feynman</button>
+    <button class="tab" role="tab" data-tab="cards" aria-selected="false">Thẻ nhớ<span class="badge" id="dueBadge" hidden>0</span></button>
+    <button class="tab" role="tab" data-tab="pomo" aria-selected="false">Pomodoro</button>
+    <button class="tab" role="tab" data-tab="palace" aria-selected="false">Cung điện ký ức</button>
+  </div>
+</nav>
+
+<main class="wrap">
+  <!-- METHODS -->
+  <section class="panel active" id="p-methods" role="tabpanel">
+    <h2>Thư viện phương pháp</h2>
+    <p class="lede">Chọn mục tiêu để lọc. Mức bằng chứng dựa trên các tổng quan nghiên cứu về kỹ thuật học tập (nổi bật là tổng quan của Dunlosky và cộng sự, 2013).</p>
+    <div class="chips" id="goalChips"></div>
+    <div class="methods" id="methodList"></div>
+  </section>
+
+  <!-- FEYNMAN -->
+  <section class="panel" id="p-feynman" role="tabpanel">
+    <h2>Bàn Feynman</h2>
+    <p class="lede">Viết lời giải thích như đang dạy một bạn nhỏ 12 tuổi. Chỗ nào bạn phải viết vòng vo hoặc chép nguyên văn sách, đó là chỗ cần học lại.</p>
+    <div class="steps4">
+      <div class="step"><b>1. Chọn khái niệm</b>Ghi tên chủ đề lên đầu trang.</div>
+      <div class="step"><b>2. Giải thích đơn giản</b>Không dùng thuật ngữ mà không giải thích.</div>
+      <div class="step"><b>3. Tìm chỗ bí</b>Ghi lại, mở tài liệu ra học tiếp.</div>
+      <div class="step"><b>4. Rút gọn, ví dụ</b>Thêm phép so sánh đời thường.</div>
+    </div>
+    <div class="sheet">
+      <label class="f" for="fConcept">Khái niệm</label>
+      <input type="text" id="fConcept" placeholder="Ví dụ: Lãi kép, Quang hợp, Định luật Ohm">
+      <div style="height:12px"></div>
+      <label class="f" for="fText">Lời giải thích của bạn</label>
+      <textarea id="fText" rows="8" placeholder="Hãy tưởng tượng bạn đang nói với em họ học lớp 6..."></textarea>
+      <div class="meter" id="fMeter"></div>
+      <label class="f" for="fGaps">Chỗ bí cần học lại (mỗi dòng một ý)</label>
+      <textarea id="fGaps" rows="3" style="min-height:80px" placeholder="Vì sao lãi được nhập vào gốc?"></textarea>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" id="fSave">Lưu bài giải thích</button>
+        <button class="btn ghost ai-only" id="fAsk">Nhờ Claude đóng vai học sinh</button>
+        <button class="btn ghost" id="fNew">Bài mới</button>
+      </div>
+      <div id="fFeedback"></div>
+    </div>
+    <div class="sheet">
+      <h3>Bài đã lưu</h3>
+      <ul class="notelist" id="noteList"></ul>
+    </div>
+  </section>
+
+  <!-- CARDS -->
+  <section class="panel" id="p-cards" role="tabpanel">
+    <h2>Thẻ nhớ ôn ngắt quãng</h2>
+    <p class="lede">Hệ thống hộp Leitner: nhớ được thì thẻ lên hộp cao hơn và lâu mới gặp lại (1, 3, 7, 14, 30 ngày); quên thì về hộp 1. Tự nhớ lại trước khi lật thẻ là phần quan trọng nhất.</p>
+    <div class="sheet" id="reviewSheet"></div>
+    <div class="sheet">
+      <h3>Phân bố thẻ theo hộp</h3>
+      <div class="boxes" id="boxes"></div>
+    </div>
+    <div class="sheet">
+      <h3>Thêm thẻ</h3>
+      <div class="row">
+        <div class="grow"><label class="f" for="cFront">Mặt trước (câu hỏi)</label><textarea id="cFront" rows="2" style="min-height:64px"></textarea></div>
+        <div class="grow"><label class="f" for="cBack">Mặt sau (đáp án)</label><textarea id="cBack" rows="2" style="min-height:64px"></textarea></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="grow"><input type="text" id="cTopic" placeholder="Chủ đề (không bắt buộc)"></div>
+        <button class="btn" id="cAdd">Thêm thẻ</button>
+      </div>
+      <details style="margin-top:14px">
+        <summary style="cursor:pointer;font-weight:600;color:var(--ink)">Thêm nhiều thẻ một lúc</summary>
+        <p class="hint">Mỗi dòng một thẻ, ngăn cách mặt trước và mặt sau bằng dấu <b>|</b>. Ví dụ: <i>Thủ đô Úc | Canberra</i></p>
+        <textarea id="cBulk" rows="5"></textarea>
+        <div class="row" style="margin-top:8px"><button class="btn ghost" id="cBulkAdd">Nhập các thẻ</button></div>
+      </details>
+      <details class="ai-only" style="margin-top:14px">
+        <summary style="cursor:pointer;font-weight:600;color:var(--ink)">Tạo thẻ từ ghi chú bằng Claude</summary>
+        <p class="hint">Dán đoạn ghi chú hoặc bài học, Claude sẽ đề xuất các câu hỏi gợi nhớ. Bạn duyệt lại trước khi thêm.</p>
+        <textarea id="cNotes" rows="6"></textarea>
+        <div class="row" style="margin-top:8px"><button class="btn ghost" id="cGen">Đề xuất thẻ</button></div>
+        <div id="cGenOut"></div>
+      </details>
+    </div>
+    <div class="sheet">
+      <div class="row"><h3 class="grow" style="margin:0">Tất cả thẻ <span class="muted" id="cCount"></span></h3><div class="grow"><input type="text" id="cSearch" placeholder="Tìm thẻ"></div></div>
+      <ul class="cardlist" id="cardList"></ul>
+    </div>
+  </section>
+
+  <!-- POMODORO -->
+  <section class="panel" id="p-pomo" role="tabpanel">
+    <h2>Đồng hồ Pomodoro</h2>
+    <p class="lede">Tập trung trọn vẹn một khoảng ngắn, rồi nghỉ thật sự. Sau bốn phiên, nghỉ dài hơn. Trong lúc nghỉ, thử nhắm mắt nhớ lại những gì vừa học.</p>
+    <div class="sheet pomo">
+      <div class="ring">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--grid-strong)" stroke-width="8"/>
+          <circle id="ringFg" cx="60" cy="60" r="52" fill="none" stroke="var(--ink)" stroke-width="8" stroke-linecap="round" stroke-dasharray="326.73" stroke-dashoffset="0"/>
+        </svg>
+        <div class="time"><b id="pTime" aria-live="polite">25:00</b><span id="pModeLabel">Tập trung</span></div>
+      </div>
+      <div>
+        <div class="modes" id="pModes">
+          <button class="chip" data-mode="focus" aria-pressed="true">Tập trung</button>
+          <button class="chip" data-mode="short" aria-pressed="false">Nghỉ ngắn</button>
+          <button class="chip" data-mode="long" aria-pressed="false">Nghỉ dài</button>
+        </div>
+        <label class="f" for="pTask">Đang làm gì?</label>
+        <input type="text" id="pTask" placeholder="Ví dụ: Ôn chương 3 Sinh học">
+        <div class="row" style="margin-top:14px">
+          <button class="btn" id="pStart">Bắt đầu</button>
+          <button class="btn ghost" id="pReset">Đặt lại</button>
+        </div>
+        <p style="margin:16px 0 0">Phiên tập trung hôm nay:</p>
+        <div class="tomatoes" id="pTomatoes"></div>
+        <div class="settings">
+          <div><label class="f" for="sFocus">Tập trung (phút)</label><input type="number" id="sFocus" min="1" max="120" value="25"></div>
+          <div><label class="f" for="sShort">Nghỉ ngắn</label><input type="number" id="sShort" min="1" max="60" value="5"></div>
+          <div><label class="f" for="sLong">Nghỉ dài</label><input type="number" id="sLong" min="1" max="60" value="15"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PALACE -->
+  <section class="panel" id="p-palace" role="tabpanel">
+    <h2>Cung điện ký ức</h2>
+    <p class="lede">Chọn một lộ trình bạn thuộc lòng (từ cổng nhà vào bếp chẳng hạn). Đặt mỗi thứ cần nhớ vào một điểm dừng, kèm một hình ảnh thật kỳ quặc, sống động. Khi cần nhớ, chỉ việc "đi dạo" lại trong đầu.</p>
+    <div class="sheet">
+      <div class="row">
+        <div class="grow"><label class="f" for="lPlace">Điểm dừng</label><input type="text" id="lPlace" placeholder="Cửa chính"></div>
+        <div class="grow"><label class="f" for="lItem">Thứ cần nhớ</label><input type="text" id="lItem" placeholder="Kali (K)"></div>
+      </div>
+      <div style="margin-top:10px"><label class="f" for="lImg">Hình ảnh liên tưởng</label><input type="text" id="lImg" placeholder="Một quả chuối khổng lồ (giàu kali) chặn ngang cửa"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="lAdd">Thêm điểm dừng</button>
+        <button class="btn ghost" id="lPractice" aria-pressed="false">Chế độ luyện tập</button>
+        <button class="btn warn" id="lClear">Xoá lộ trình</button>
+      </div>
+    </div>
+    <div class="sheet" id="palaceWrap"><ol class="route" id="route"></ol></div>
+  </section>
+</main>
+
+<footer class="wrap"><span id="syncStatus">Dữ liệu được lưu trên trình duyệt này.</span></footer>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const DAY=86400000;
+const INTERVALS=[0,1,3,7,14,30];
+const todayKey=()=>new Date().toISOString().slice(0,10);
+
+/* ---------- Data: methods ---------- */
+const GOALS={all:"Tất cả",hieu:"Hiểu sâu",nho:"Nhớ lâu",taptrung:"Tập trung",sapxep:"Sắp xếp kiến thức"};
+const EV={manh:"Bằng chứng mạnh",tb:"Bằng chứng vừa",han:"Ít bằng chứng"};
+const METHODS=[
+ {name:"Gợi nhớ chủ động",en:"Active recall",goal:["nho"],ev:"manh",
+  what:"Tự kiểm tra bằng cách lấy thông tin ra khỏi đầu, thay vì đọc lại.",
+  steps:["Đọc xong một phần, gập sách lại.","Viết hoặc nói ra mọi thứ bạn nhớ được.","Mở sách đối chiếu, đánh dấu chỗ thiếu.","Biến các ý chính thành câu hỏi để tự hỏi lần sau."],
+  tip:"Cảm giác khó khăn khi cố nhớ chính là lúc trí nhớ đang được củng cố. Đọc lại thấy dễ nhưng quên nhanh.",tool:"cards"},
+ {name:"Lặp lại ngắt quãng",en:"Spaced repetition",goal:["nho"],ev:"manh",
+  what:"Ôn lại với khoảng cách tăng dần, đúng lúc sắp quên.",
+  steps:["Học lần đầu.","Ôn sau 1 ngày, rồi 3 ngày, 1 tuần, 2 tuần, 1 tháng.","Thứ nào quên thì quay lại khoảng cách ngắn.","Chia nhỏ: 20 phút mỗi ngày hiệu quả hơn 3 tiếng một lần."],
+  tip:"Kết hợp với gợi nhớ chủ động (dùng thẻ nhớ) để có hiệu quả cao nhất.",tool:"cards"},
+ {name:"Kỹ thuật Feynman",en:"Feynman technique",goal:["hieu"],ev:"tb",
+  what:"Giải thích lại bằng lời đơn giản để lộ ra chỗ mình chưa hiểu.",
+  steps:["Chọn một khái niệm.","Giải thích như dạy một đứa trẻ.","Tìm chỗ bí, quay lại tài liệu.","Rút gọn và thêm ví dụ, phép so sánh."],
+  tip:"Dựa trên hiệu ứng tự giải thích và hiệu ứng người dạy, cả hai đều được nghiên cứu ủng hộ.",tool:"feynman"},
+ {name:"Diễn giải chi tiết",en:"Elaborative interrogation",goal:["hieu","nho"],ev:"tb",
+  what:"Liên tục hỏi \"Tại sao?\" và \"Như thế nào?\" rồi tự trả lời.",
+  steps:["Với mỗi sự kiện, hỏi: vì sao điều này đúng?","Nối kiến thức mới với điều bạn đã biết.","So sánh: cái này giống và khác cái kia thế nào?"],
+  tip:"Hiệu quả nhất khi bạn đã có chút nền tảng về chủ đề."},
+ {name:"Học xen kẽ",en:"Interleaving",goal:["hieu"],ev:"tb",
+  what:"Trộn nhiều dạng bài hoặc chủ đề trong một buổi thay vì làm hết một dạng rồi mới sang dạng khác.",
+  steps:["Chọn 2–3 dạng bài liên quan (ví dụ: tính diện tích các hình khác nhau).","Làm xen kẽ: A, B, C, B, A, C...","Trước mỗi bài, tự hỏi: đây là dạng nào, dùng cách gì?"],
+  tip:"Lúc đầu sẽ thấy chậm và khó hơn, nhưng kết quả kiểm tra sau đó tốt hơn rõ rệt, nhất là với toán."},
+ {name:"Mã hoá kép",en:"Dual coding",goal:["hieu","nho"],ev:"tb",
+  what:"Kết hợp chữ với hình: sơ đồ, đường thời gian, biểu đồ, hình vẽ.",
+  steps:["Đọc phần chữ.","Tự vẽ lại thành sơ đồ hoặc hình minh hoạ.","Giải thích hình bằng lời, và ngược lại."],
+  tip:"Không cần vẽ đẹp. Quan trọng là chính bạn chuyển đổi giữa chữ và hình."},
+ {name:"Cung điện ký ức",en:"Method of loci",goal:["nho"],ev:"manh",
+  what:"Gắn từng thứ cần nhớ vào các vị trí trên một lộ trình quen thuộc.",
+  steps:["Chọn một nơi bạn thuộc lòng.","Xác định các điểm dừng theo thứ tự.","Đặt mỗi mục vào một điểm bằng hình ảnh kỳ quặc, phóng đại.","Đi lại lộ trình trong đầu để nhớ."],
+  tip:"Rất mạnh với danh sách có thứ tự (bài phát biểu, các bước, dãy số). Ít phù hợp để hiểu khái niệm.",tool:"palace"},
+ {name:"Câu thần chú, viết tắt",en:"Mnemonics",goal:["nho"],ev:"han",
+  what:"Biến danh sách khó nhớ thành câu vui, dễ đọc.",
+  steps:["Lấy chữ cái đầu của từng mục.","Ghép thành một câu có nghĩa, càng buồn cười càng tốt.","Đọc to vài lần."],
+  tip:"Ví dụ quen thuộc: dãy hoạt động kim loại K, Na, Ca, Mg, Al, Zn, Fe... thành \"Khi Nào Cần May Áo Giáp Sắt...\"; hay \"Sin đi học, Cos không hư, Tan đoàn kết, Cot kết đoàn\". Tốt cho dữ kiện rời rạc, không thay được việc hiểu bài."},
+ {name:"Chia nhỏ thông tin",en:"Chunking",goal:["nho","sapxep"],ev:"tb",
+  what:"Gom các mẩu nhỏ thành nhóm có nghĩa để trí nhớ ngắn hạn chứa được nhiều hơn.",
+  steps:["Tìm quy luật hoặc nhóm tự nhiên trong thông tin.","Đặt tên cho mỗi nhóm.","Học từng nhóm, rồi ghép lại."],
+  tip:"Số điện thoại 0912345678 dễ nhớ hơn khi tách thành 0912 345 678."},
+ {name:"Sơ đồ tư duy",en:"Mind map",goal:["sapxep","hieu"],ev:"tb",
+  what:"Vẽ chủ đề ở giữa, các ý chính toả ra thành nhánh.",
+  steps:["Viết chủ đề ở giữa trang.","Vẽ các nhánh lớn cho ý chính.","Thêm nhánh nhỏ, từ khoá, hình vẽ.","Nối các nhánh có liên quan với nhau."],
+  tip:"Hiệu quả nhất khi bạn tự vẽ từ trí nhớ rồi mới đối chiếu với sách."},
+ {name:"Ghi chép Cornell",en:"Cornell notes",goal:["sapxep"],ev:"han",
+  what:"Chia trang thành cột ghi chép, cột câu hỏi gợi ý và phần tóm tắt.",
+  steps:["Chia trang: cột phải rộng để ghi bài, cột trái hẹp, dải dưới cùng.","Trong giờ học, ghi ở cột phải.","Sau giờ học, viết câu hỏi vào cột trái.","Tóm tắt cả trang trong 2–3 câu ở dưới.","Che cột phải, nhìn câu hỏi để tự trả lời."],
+  tip:"Bản thân cách chia trang ít được nghiên cứu, nhưng bước che cột để tự hỏi chính là gợi nhớ chủ động."},
+ {name:"Pomodoro",en:"Pomodoro",goal:["taptrung"],ev:"han",
+  what:"Học tập trung 25 phút, nghỉ 5 phút, lặp lại.",
+  steps:["Chọn một việc cụ thể.","Đặt giờ 25 phút, tắt thông báo.","Nghỉ 5 phút, đứng dậy đi lại.","Sau 4 phiên, nghỉ 15–30 phút."],
+  tip:"Ít nghiên cứu trực tiếp, nhưng giúp chống trì hoãn và tạo nhịp nghỉ đều đặn. Có thể chỉnh 50/10 nếu hợp hơn.",tool:"pomo"}
+];
+
+/* ---------- State ---------- */
+const blank=()=>({cards:[],notes:[],palace:[],pomo:{date:"",count:0},settings:{focus:25,short:5,long:15},updatedAt:0});
+let S=blank();
+function normalize(d){const b=blank();d=d||{};return{
+  cards:Array.isArray(d.cards)?d.cards:b.cards,notes:Array.isArray(d.notes)?d.notes:b.notes,
+  palace:Array.isArray(d.palace)?d.palace:b.palace,pomo:d.pomo&&typeof d.pomo==="object"?d.pomo:b.pomo,
+  settings:Object.assign({},b.settings,d.settings||{}),updatedAt:d.updatedAt||0};}
+try{const raw=localStorage.getItem("mtk-state");if(raw)S=normalize(JSON.parse(raw));}catch(e){}
+
+let dbRef=null,saveTimer=null;
+function save(){
+  S.updatedAt=Date.now();
+  try{localStorage.setItem("mtk-state",JSON.stringify(S));}catch(e){}
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    if(!dbRef)return;
+    try{await dbRef.set(JSON.parse(JSON.stringify(S)));setSync("Đã lưu vào tài khoản của bạn.");}
+    catch(e){if(e&&e.code==="quota_exceeded")setSync("Bộ nhớ đã đầy, hãy xoá bớt thẻ hoặc bài cũ.");else setSync("Chưa lưu được lên tài khoản, dữ liệu vẫn nằm trên trình duyệt này.");}
+  },800);
+}
+function setSync(t){$("#syncStatus").textContent=t;}
+function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("show"),2200);}
+
+/* Platform capabilities (optional) */
+let sample=null;
+(async()=>{
+  if(!window.claude||typeof window.claude.use!=="function")return;
+  try{
+    const [db,user,smp]=await Promise.all([claude.use("db"),claude.use("user"),claude.use("sample")]);
+    if(smp){sample=smp;document.body.classList.add("has-ai");}
+    if(db&&user){
+      const id=await user.id();
+      if(id){
+        dbRef=db.collection("data/users/"+id).doc("toolkit");
+        const snap=await dbRef.get();
+        if(snap.exists){
+          const d=JSON.parse(JSON.stringify(snap.data()));
+          if((d.updatedAt||0)>(S.updatedAt||0)){S=normalize(d);try{localStorage.setItem("mtk-state",JSON.stringify(S));}catch(e){}renderAll();}
+          else if(S.updatedAt>(d.updatedAt||0))save();
+        }else if(S.updatedAt)save();
+        setSync("Dữ liệu được lưu vào tài khoản của bạn, mở ở thiết bị khác vẫn còn.");
+      }
+    }
+  }catch(e){}
+})();
+function aiError(e){const c=e&&e.code;
+  if(c==="not_granted")return"Bạn chưa cho phép trang này hỏi Claude.";
+  if(c==="rate_limited")return"Đang có nhiều yêu cầu quá, thử lại sau ít phút.";
+  if(c==="cancelled")return"Đã dừng.";
+  return"Không nhận được phản hồi từ Claude. Thử lại sau.";}
+
+/* ---------- Tabs ---------- */
+const tabs=[...document.querySelectorAll(".tab")];
+function showTab(name){
+  tabs.forEach(t=>t.setAttribute("aria-selected",t.dataset.tab===name?"true":"false"));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id==="p-"+name));
+  try{sessionStorage.setItem("mtk-tab",name);}catch(e){}
+  if(name==="cards")renderReview();
+}
+tabs.forEach(t=>t.addEventListener("click",()=>{showTab(t.dataset.tab);window.scrollTo({top:$("nav.tabs").offsetTop,behavior:"smooth"});}));
+
+/* ---------- Today line ---------- */
+function dueCards(){const n=Date.now();return S.cards.filter(c=>(c.due||0)<=n);}
+function pomoToday(){return S.pomo.date===todayKey()?S.pomo.count:0;}
+function renderToday(){
+  const d=dueCards().length,p=pomoToday();
+  $("#today").innerHTML=S.cards.length===0&&p===0
+    ?"Bắt đầu bằng việc chọn một phương pháp bên dưới."
+    :`Hôm nay có <mark>${d} thẻ cần ôn</mark> và bạn đã xong <mark>${p} phiên tập trung</mark>.`;
+  const b=$("#dueBadge");b.hidden=d===0;b.textContent=d;
+}
+
+/* ---------- Methods ---------- */
+let goal="all";
+function renderChips(){
+  $("#goalChips").innerHTML=Object.entries(GOALS).map(([k,v])=>`<button class="chip" data-g="${k}" aria-pressed="${k===goal}">${v}</button>`).join("");
+}
+$("#goalChips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;goal=b.dataset.g;renderChips();renderMethods();});
+const TOOLNAME={cards:"Mở thẻ nhớ",feynman:"Mở bàn Feynman",palace:"Mở cung điện ký ức",pomo:"Mở đồng hồ Pomodoro"};
+function renderMethods(){
+  const list=METHODS.filter(m=>goal==="all"||m.goal.includes(goal));
+  $("#methodList").innerHTML=list.map(m=>`<details class="m">
+    <summary><span class="m-name">${esc(m.name)}<small>${esc(m.en)}</small></span><span class="ev ${m.ev}">${EV[m.ev]}</span><span class="m-what">${esc(m.what)}</span></summary>
+    <div class="m-body"><ol>${m.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
+    <div class="m-tip">${esc(m.tip)}</div>
+    <div class="row">${m.tool?`<button class="btn small" data-go="${m.tool}">${TOOLNAME[m.tool]}</button>`:""}<span class="tags">Mục tiêu: ${m.goal.map(g=>GOALS[g]).join(", ")}</span></div></div></details>`).join("");
+}
+$("#methodList").addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(b){showTab(b.dataset.go);window.scrollTo({top:$("nav.tabs").offsetTop,behavior:"smooth"});}});
+
+/* ---------- Feynman ---------- */
+let curNote=null;
+function meter(){
+  const t=$("#fText").value.trim();
+  const words=t?t.split(/\s+/).length:0;
+  const sents=t?t.split(/[.!?…]+/).filter(s=>s.trim()).length:0;
+  const avg=sents?Math.round(words/sents):0;
+  const gaps=$("#fGaps").value.split("\n").filter(s=>s.trim()).length;
+  let advice="";
+  if(avg>25)advice="Câu hơi dài, thử tách nhỏ.";
+  else if(words>0&&words<40)advice="Còn ngắn, thử thêm một ví dụ.";
+  else if(words>0)advice="Độ dài câu dễ theo dõi.";
+  $("#fMeter").innerHTML=`<span><b>${words}</b> từ</span><span><b>${sents}</b> câu</span><span>Trung bình <b>${avg}</b> từ/câu</span><span><b>${gaps}</b> chỗ bí</span>${advice?`<span>${advice}</span>`:""}`;
+}
+["#fText","#fGaps"].forEach(s=>$(s).addEventListener("input",meter));
+function loadNote(n){curNote=n?n.id:null;$("#fConcept").value=n?n.concept:"";$("#fText").value=n?n.text:"";$("#fGaps").value=n?n.gaps:"";$("#fFeedback").innerHTML=n&&n.feedback?fbHTML(n.feedback):"";meter();}
+$("#fNew").addEventListener("click",()=>{loadNote(null);$("#fConcept").focus();});
+$("#fSave").addEventListener("click",()=>{
+  const concept=$("#fConcept").value.trim(),text=$("#fText").value.trim();
+  if(!concept||!text){toast("Cần có khái niệm và lời giải thích.");return;}
+  let n=S.notes.find(x=>x.id===curNote);
+  if(!n){n={id:uid()};S.notes.unshift(n);curNote=n.id;}
+  Object.assign(n,{concept,text,gaps:$("#fGaps").value,updated:Date.now()});
+  save();renderNotes();toast("Đã lưu bài giải thích.");
+});
+function renderNotes(){
+  $("#noteList").innerHTML=S.notes.length?S.notes.map(n=>`<li><button class="link" data-open="${n.id}">${esc(n.concept)}</button><span class="hint">${new Date(n.updated).toLocaleDateString("vi-VN")}</span><button class="iconbtn" data-del="${n.id}" aria-label="Xoá bài ${esc(n.concept)}">✕</button></li>`).join("")
+  :`<li class="muted">Chưa có bài nào. Viết lời giải thích đầu tiên ở trên rồi bấm Lưu.</li>`;
+}
+$("#noteList").addEventListener("click",e=>{
+  const o=e.target.closest("[data-open]"),d=e.target.closest("[data-del]");
+  if(o){loadNote(S.notes.find(n=>n.id===o.dataset.open));window.scrollTo({top:$("#p-feynman").offsetTop-60,behavior:"smooth"});}
+  if(d&&confirm("Xoá bài giải thích này?")){S.notes=S.notes.filter(n=>n.id!==d.dataset.del);if(curNote===d.dataset.del)loadNote(null);save();renderNotes();}
+});
+function fbHTML(f){
+  const li=a=>(Array.isArray(a)&&a.length)?`<ul>${a.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:"<p class='muted'>Không có.</p>";
+  return `<div class="fb"><div class="row"><span class="score">${esc(f.diem)}/10</span><span>${esc(f.nhan_xet)}</span></div>
+  <h4>Chỗ em chưa hiểu</h4>${li(f.cho_chua_ro)}
+  <h4>Em muốn hỏi thêm</h4>${li(f.cau_hoi)}
+  ${f.vi_du_goi_y?`<h4>Gợi ý một ví dụ</h4><p style="margin:0">${esc(f.vi_du_goi_y)}</p>`:""}</div>`;
+}
+$("#fAsk").addEventListener("click",async()=>{
+  const concept=$("#fConcept").value.trim(),text=$("#fText").value.trim();
+  if(!sample)return;
+  if(!concept||!text){toast("Cần có khái niệm và lời giải thích.");return;}
+  const btn=$("#fAsk");btn.disabled=true;$("#fFeedback").innerHTML=`<div class="fb">Đang đọc bài của bạn...</div>`;
+  const prompt=`Bạn đóng vai một học sinh 12 tuổi thông minh, tò mò, đang nghe một người giải thích khái niệm "${concept}". Đây là lời giải thích:\n"""\n${text}\n"""\nHãy đánh giá xem lời giải thích có đủ đơn giản, chính xác và dễ hiểu với bạn không. Chỉ ra chỗ dùng từ khó chưa được giải thích, chỗ nhảy cóc, chỗ có thể sai kiến thức. Trả lời bằng tiếng Việt, xưng "em", giọng thân thiện.\nChỉ trả về JSON, không thêm gì khác, theo dạng:\n{"diem": số nguyên 1-10, "nhan_xet": "một câu nhận xét chung", "cho_chua_ro": ["..."], "cau_hoi": ["2-3 câu hỏi em muốn hỏi thêm"], "vi_du_goi_y": "một ví dụ hoặc phép so sánh đời thường giúp giải thích dễ hơn"}`;
+  try{
+    const f=await sample.json(prompt);
+    $("#fFeedback").innerHTML=fbHTML(f);
+    const n=S.notes.find(x=>x.id===curNote);if(n){n.feedback=f;save();}
+  }catch(e){$("#fFeedback").innerHTML=`<div class="fb">${aiError(e)}</div>`;}
+  finally{btn.disabled=false;}
+});
+
+/* ---------- Flashcards ---------- */
+let queue=[],qi=0,flipped=false,sessionDone=0;
+function addCard(front,back,topic){S.cards.push({id:uid(),front,back,topic:topic||"",box:1,due:Date.now(),created:Date.now()});}
+$("#cAdd").addEventListener("click",()=>{
+  const f=$("#cFront").value.trim(),b=$("#cBack").value.trim();
+  if(!f||!b){toast("Cần điền cả hai mặt thẻ.");return;}
+  addCard(f,b,$("#cTopic").value.trim());$("#cFront").value="";$("#cBack").value="";$("#cFront").focus();
+  save();refreshCards();toast("Đã thêm thẻ.");
+});
+$("#cBulkAdd").addEventListener("click",()=>{
+  const lines=$("#cBulk").value.split("\n").map(l=>l.split("|")).filter(p=>p.length>=2&&p[0].trim()&&p.slice(1).join("|").trim());
+  if(!lines.length){toast("Không tìm thấy dòng nào có dấu |");return;}
+  lines.forEach(p=>addCard(p[0].trim(),p.slice(1).join("|").trim(),$("#cTopic").value.trim()));
+  $("#cBulk").value="";save();refreshCards();toast(`Đã thêm ${lines.length} thẻ.`);
+});
+let proposals=[];
+$("#cGen").addEventListener("click",async()=>{
+  const notes=$("#cNotes").value.trim();if(!sample||!notes){toast("Hãy dán ghi chú trước.");return;}
+  const btn=$("#cGen");btn.disabled=true;$("#cGenOut").innerHTML=`<p class="hint">Đang soạn thẻ...</p>`;
+  const prompt=`Từ ghi chú học tập dưới đây, hãy soạn từ 5 đến 12 thẻ nhớ theo kiểu gợi nhớ chủ động: mặt trước là một câu hỏi ngắn, cụ thể; mặt sau là đáp án ngắn gọn. Mỗi thẻ chỉ kiểm tra một ý. Viết bằng ngôn ngữ của ghi chú.\nGhi chú:\n"""\n${notes.slice(0,8000)}\n"""\nChỉ trả về JSON, không thêm gì khác: {"the":[{"truoc":"...","sau":"..."}]}`;
+  try{
+    const r=await sample.json(prompt);proposals=(r&&Array.isArray(r.the)?r.the:[]).filter(x=>x&&x.truoc&&x.sau);
+    $("#cGenOut").innerHTML=proposals.length?`<ul class="cardlist">${proposals.map((p,i)=>`<li style="grid-template-columns:auto 1fr 1fr"><input type="checkbox" checked data-pi="${i}" aria-label="Chọn thẻ"><span>${esc(p.truoc)}</span><span class="muted">${esc(p.sau)}</span></li>`).join("")}</ul><div class="row" style="margin-top:10px"><button class="btn" id="cGenAdd">Thêm các thẻ đã chọn</button></div>`:`<p class="hint">Không soạn được thẻ nào từ đoạn này.</p>`;
+  }catch(e){$("#cGenOut").innerHTML=`<p class="hint">${aiError(e)}</p>`;}
+  finally{btn.disabled=false;}
+});
+$("#cGenOut").addEventListener("click",e=>{
+  if(e.target.id!=="cGenAdd")return;
+  const picked=[...document.querySelectorAll("#cGenOut [data-pi]:checked")].map(c=>proposals[+c.dataset.pi]);
+  picked.forEach(p=>addCard(String(p.truoc),String(p.sau),$("#cTopic").value.trim()));
+  $("#cGenOut").innerHTML="";$("#cNotes").value="";save();refreshCards();toast(`Đã thêm ${picked.length} thẻ.`);
+});
+function renderBoxes(){
+  const counts=[1,2,3,4,5].map(b=>S.cards.filter(c=>c.box===b).length);const max=Math.max(1,...counts);
+  const lab=["Hằng ngày","3 ngày","1 tuần","2 tuần","1 tháng"];
+  $("#boxes").innerHTML=counts.map((n,i)=>`<div class="boxcol"><div class="boxbar"><span style="height:${Math.round(n/max*100)}%"></span></div><b>${n}</b>Hộp ${i+1}<br>${lab[i]}</div>`).join("");
+}
+function renderCardList(){
+  const q=$("#cSearch").value.trim().toLowerCase();
+  const list=S.cards.filter(c=>!q||(c.front+" "+c.back+" "+c.topic).toLowerCase().includes(q));
+  $("#cCount").textContent=`(${S.cards.length})`;
+  $("#cardList").innerHTML=list.length?list.map(c=>`<li><span>${esc(c.front)}</span><span class="back-col">${esc(c.back)}</span><span class="bx">Hộp ${c.box}</span><button class="iconbtn" data-cdel="${c.id}" aria-label="Xoá thẻ">✕</button></li>`).join("")
+   :`<li class="muted" style="display:block">${S.cards.length?"Không có thẻ nào khớp.":"Chưa có thẻ nào."}</li>`;
+}
+$("#cSearch").addEventListener("input",renderCardList);
+$("#cardList").addEventListener("click",e=>{const d=e.target.closest("[data-cdel]");if(d&&confirm("Xoá thẻ này?")){S.cards=S.cards.filter(c=>c.id!==d.dataset.cdel);queue=queue.filter(c=>c.id!==d.dataset.cdel);save();refreshCards();}});
+function startSession(){queue=dueCards().sort(()=>Math.random()-.5);qi=0;flipped=false;sessionDone=0;renderReview();}
+function renderReview(){
+  const el=$("#reviewSheet");
+  if(!queue.length||qi>=queue.length){
+    const d=dueCards().length;
+    if(sessionDone>0&&d===0){el.innerHTML=`<div class="empty"><p style="font-family:var(--hand);font-size:1.6rem;color:var(--ink);margin:0">Xong rồi!</p><p>Bạn đã ôn ${sessionDone} lượt. Hẹn gặp lại các thẻ vào ngày ôn tiếp theo.</p></div>`;return;}
+    if(!S.cards.length){el.innerHTML=`<div class="empty">Chưa có thẻ nào. Thêm vài thẻ ở bên dưới để bắt đầu ôn.</div>`;return;}
+    if(!d){const next=Math.min(...S.cards.map(c=>c.due||0));el.innerHTML=`<div class="empty">Không có thẻ nào đến hạn. Lần ôn tiếp theo: ${new Date(next).toLocaleDateString("vi-VN")}.</div>`;return;}
+    el.innerHTML=`<div class="row"><div class="grow"><h3 style="margin:0">${d} thẻ đến hạn ôn</h3><span class="hint">Phím tắt khi ôn: Space để lật, 1 = Quên, 2 = Nhớ</span></div><button class="btn" id="startReview">Bắt đầu ôn</button></div>`;
+    $("#startReview").onclick=startSession;return;
+  }
+  const c=queue[qi];
+  el.innerHTML=`<div class="flash" aria-live="polite"><div class="meta">${qi+1} / ${queue.length}${c.topic?" · "+esc(c.topic):""} · Hộp ${c.box}</div>
+    <div class="face">${esc(c.front)}</div>${flipped?`<div class="back">${esc(c.back)}</div>`:""}</div>
+    <div class="review-actions">${flipped?`<button class="btn forgot" id="rForgot">Quên</button><button class="btn remember" id="rRemember">Nhớ</button>`:`<button class="btn" id="rFlip">Lật thẻ</button>`}<button class="btn ghost" id="rStop">Dừng</button></div>`;
+  if(flipped){$("#rForgot").onclick=()=>grade(false);$("#rRemember").onclick=()=>grade(true);}else $("#rFlip").onclick=flip;
+  $("#rStop").onclick=()=>{queue=[];renderReview();};
+}
+function flip(){flipped=true;renderReview();}
+function grade(ok){
+  const c=S.cards.find(x=>x.id===queue[qi].id);sessionDone++;
+  if(c){if(ok){c.box=Math.min(5,c.box+1);c.due=Date.now()+INTERVALS[c.box]*DAY;}else{c.box=1;c.due=Date.now();queue.push(c);}}
+  qi++;flipped=false;save();renderBoxes();renderCardList();renderToday();renderReview();
+}
+document.addEventListener("keydown",e=>{
+  if(!$("#p-cards").classList.contains("active")||!queue.length||qi>=queue.length)return;
+  if(/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;
+  if(e.code==="Space"&&!flipped){e.preventDefault();flip();}
+  else if(flipped&&e.key==="1")grade(false);else if(flipped&&e.key==="2")grade(true);
+});
+function refreshCards(){renderBoxes();renderCardList();renderToday();if(!queue.length||qi>=queue.length)renderReview();}
+
+/* ---------- Pomodoro ---------- */
+const MODE_LABEL={focus:"Tập trung",short:"Nghỉ ngắn",long:"Nghỉ dài"};
+let mode="focus",remaining=S.settings.focus*60,endAt=0,tick=null,audio=null;
+const C=326.73;
+function total(){return S.settings[mode]*60;}
+function fmt(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");}
+function drawPomo(){
+  $("#pTime").textContent=fmt(remaining);$("#pModeLabel").textContent=MODE_LABEL[mode];
+  $("#ringFg").setAttribute("stroke-dashoffset",String(C*(1-remaining/total())));
+  $("#ringFg").setAttribute("stroke",mode==="focus"?"var(--ink)":"var(--green)");
+  document.querySelectorAll("#pModes .chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===mode));
+  $("#pStart").textContent=tick?"Tạm dừng":(remaining<total()?"Tiếp tục":"Bắt đầu");
+  const n=pomoToday();$("#pTomatoes").textContent=n?"🍅".repeat(Math.min(n,16))+(n>16?` +${n-16}`:""):"Chưa có phiên nào.";
+  document.title=tick?`${fmt(remaining)} · ${MODE_LABEL[mode]}`:"Hộp công cụ ghi nhớ";
+}
+function beep(){try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();[0,.35,.7].forEach(t=>{const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=880;o.connect(g);g.connect(audio.destination);g.gain.setValueAtTime(.0001,audio.currentTime+t);g.gain.exponentialRampToValueAtTime(.3,audio.currentTime+t+.02);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+t+.3);o.start(audio.currentTime+t);o.stop(audio.currentTime+t+.32);});}catch(e){}}
+function stop(){clearInterval(tick);tick=null;}
+function setMode(m){stop();mode=m;remaining=total();drawPomo();}
+function finish(){
+  stop();beep();
+  if(mode==="focus"){if(S.pomo.date!==todayKey())S.pomo={date:todayKey(),count:0};S.pomo.count++;save();renderToday();
+    toast("Hết phiên tập trung. Nghỉ chút nhé!");setMode(S.pomo.count%4===0?"long":"short");}
+  else{toast("Hết giờ nghỉ. Sẵn sàng phiên tiếp theo.");setMode("focus");}
+}
+$("#pStart").addEventListener("click",()=>{
+  try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume&&audio.resume();}catch(e){}
+  if(tick){stop();drawPomo();return;}
+  endAt=Date.now()+remaining*1000;
+  tick=setInterval(()=>{remaining=(endAt-Date.now())/1000;if(remaining<=0){remaining=0;finish();}drawPomo();},250);drawPomo();
+});
+$("#pReset").addEventListener("click",()=>setMode(mode));
+$("#pModes").addEventListener("click",e=>{const b=e.target.closest("[data-mode]");if(b)setMode(b.dataset.mode);});
+[["#sFocus","focus"],["#sShort","short"],["#sLong","long"]].forEach(([s,k])=>{
+  $(s).addEventListener("change",()=>{const v=Math.min(120,Math.max(1,parseInt($(s).value,10)||S.settings[k]));$(s).value=v;S.settings[k]=v;save();if(!tick&&mode===k){remaining=total();}drawPomo();});
+});
+
+/* ---------- Palace ---------- */
+let practice=false;
+function renderPalace(){
+  const r=$("#route");
+  if(!S.palace.length){r.innerHTML="";$("#palaceWrap").innerHTML=`<div class="empty">Lộ trình đang trống. Thêm điểm dừng đầu tiên, ví dụ "Cổng nhà".</div><ol class="route" id="route"></ol>`;return;}
+  const wrap=$("#palaceWrap");if(!wrap.querySelector(".route")||wrap.querySelector(".empty"))wrap.innerHTML=`<ol class="route" id="route"></ol>`;
+  wrap.classList.toggle("practice",practice);
+  $("#route").innerHTML=S.palace.map((p,i)=>`<li><div><div class="place">${esc(p.place)}</div><span class="item${practice?" hidden":""}" data-reveal="${i}" tabindex="${practice?0:-1}">${practice?"Chạm để xem":esc(p.item)}</span>${p.image&&!practice?`<div class="img">${esc(p.image)}</div>`:""}</div>
+   <div class="row" style="gap:2px">${practice?"":`<button class="iconbtn" data-up="${i}" aria-label="Lên">↑</button><button class="iconbtn" data-down="${i}" aria-label="Xuống">↓</button><button class="iconbtn" data-pdel="${i}" aria-label="Xoá">✕</button>`}</div></li>`).join("");
+}
+$("#lAdd").addEventListener("click",()=>{
+  const place=$("#lPlace").value.trim(),item=$("#lItem").value.trim();
+  if(!place||!item){toast("Cần có điểm dừng và thứ cần nhớ.");return;}
+  S.palace.push({id:uid(),place,item,image:$("#lImg").value.trim()});["#lPlace","#lItem","#lImg"].forEach(s=>$(s).value="");$("#lPlace").focus();save();renderPalace();
+});
+$("#lPractice").addEventListener("click",()=>{practice=!practice;$("#lPractice").setAttribute("aria-pressed",practice);$("#lPractice").textContent=practice?"Thoát luyện tập":"Chế độ luyện tập";renderPalace();});
+$("#lClear").addEventListener("click",()=>{if(S.palace.length&&confirm("Xoá toàn bộ lộ trình?")){S.palace=[];save();renderPalace();}});
+$("#palaceWrap").addEventListener("click",e=>{
+  const t=e.target;
+  if(t.matches("[data-reveal].hidden")){reveal(t);return;}
+  const sw=(i,j)=>{if(j<0||j>=S.palace.length)return;[S.palace[i],S.palace[j]]=[S.palace[j],S.palace[i]];save();renderPalace();};
+  if(t.dataset.up)sw(+t.dataset.up,+t.dataset.up-1);
+  if(t.dataset.down)sw(+t.dataset.down,+t.dataset.down+1);
+  if(t.dataset.pdel){S.palace.splice(+t.dataset.pdel,1);save();renderPalace();}
+});
+$("#palaceWrap").addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches("[data-reveal].hidden")){e.preventDefault();reveal(e.target);}});
+function reveal(t){const p=S.palace[+t.dataset.reveal];if(p){t.textContent=p.item;t.classList.remove("hidden");}}
+
+/* ---------- Init ---------- */
+function renderAll(){
+  $("#sFocus").value=S.settings.focus;$("#sShort").value=S.settings.short;$("#sLong").value=S.settings.long;
+  if(!tick)remaining=total();
+  renderChips();renderMethods();renderNotes();renderBoxes();renderCardList();renderReview();renderPalace();drawPomo();renderToday();meter();
+}
+renderAll();
+try{const t=sessionStorage.getItem("mtk-tab");if(t&&$("#p-"+t))showTab(t);}catch(e){}
+})();
+</script>
+</body>
+</html>
